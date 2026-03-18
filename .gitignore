@@ -1,7 +1,13 @@
+# Dependencies
 /vendor/
 node_modules/
+/frontend/node_modules/
+
+# NPM logs
 npm-debug.log
 yarn-error.log
+/frontend/npm-debug.log
+/frontend/yarn-error.log
 
 # Laravel 4 specific
 bootstrap/compiled.php
@@ -15,16 +21,58 @@ public/hot
 public_html/storage
 public_html/hot
 
+# Laravel cache & env
 storage/*.key
 .env
+.env.backup
+.env.production
 Homestead.yaml
 Homestead.json
 /.vagrant
 .phpunit.result.cache
-
-/public/build
 /storage/pail
-.env.backup
-.env.production
-.phpactor.json
+.phactor.json
 auth.json
+
+# React build outputs
+/frontend/build
+/frontend/dist
+/frontend/public/build
+
+# React environment variables
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & debug
+*.log
+storage/logs/*
+!storage/logs/.gitkeep
+
+# Compiled files
+/public/build
+/public/hot
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Testing
+/phpunit.xml
+.phpunit.result.cache
+
+# Docker (if you use it)
+docker-compose.override.yml
+/.docker
