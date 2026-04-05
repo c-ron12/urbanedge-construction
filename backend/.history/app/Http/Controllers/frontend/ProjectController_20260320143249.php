@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Http\Controllers\frontend;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Project;
+
+class ProjectController extends Controller
+{
+    public function latestProjects(Request $request)   // Method to return  4 latest active projects for the frontend in Home Page. (Request $request) is written to get limit from frontend.
+    {
+        $project = Project::orderBy('created_at', 'desc')->where('status', 1)->limit($request->limit ?? 4)->get(); 
+        return response()->json([
+            'status' => true,
+            'data' => $project
+        ]);
+    }
+
+    public function index()   // Method to return a all list of active projects for the frontend in Projects page.
+    {
+        $project = Project::orderBy('created_at', 'desc')->where('status', 1)->get();
+        return response()->json([
+            'status' => true,
+            'data' => $project
+        ]);
+    }
+
+
+    public function project($id)      // This method is used to fetch details of a single project.
+    {
+        $project = Project::find($id);
+        if (!$project) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Project not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Project details',
+            'data' => $project
+        ]);
+    }
+}

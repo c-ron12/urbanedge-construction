@@ -1,0 +1,142 @@
+import React from 'react';
+import Header from '../common/Header';
+import Footer from '../common/Footer';
+import Banner from '../common/Banner';
+import BannerImg from '../../assets/images/banner2.jpg';
+import { apiUrl, fileUrl } from '../common/http';
+import Testimonials from '../common/LatestTestimonials';
+import SkeletonLoader from '../common/SkeletonLoader';
+import { useParams, NavLink, useLocation } from 'react-router-dom';
+
+const ServiceDetail = () => {
+  const params = useParams();
+  const location = useLocation(); // To check if user came from external page or from sidebar within service detail page.
+
+  const [service, setService] = React.useState(null);
+  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
+  const [services, setServices] = React.useState([]);
+
+  const fetchServices = async () => {
+    const res = await fetch(`${apiUrl}/get-services/`, {
+      method: 'GET',
+    });
+    const result = await res.json();
+    setServices(result.data);
+  };
+
+  // Api call to fetch single service
+  const fetchService = async () => {
+    setLoading(true); // start loading
+    try {
+      const res = await fetch(`${apiUrl}/get-service/${params.id}`);
+      const result = await res.json();
+      setService(result.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false); // stop loading
+    }
+  };
+
+  // Fetch service when component mounts
+  React.useEffect(() => {
+    if (location.state?.from === 'external') {
+      window.scrollTo(0, 0); // If user came from external page (like Services page) then scroll to top, because they might be in middle of the page when they click on a service. But if they are clicking on service from sidebar of ServiceDetail page, we don't scroll to top because they are already on the service detail page.
+    }
+    fetchService();
+    fetchServices();
+  }, [params.id]); // Added params.id as a dependency to refetch when the id changes, means when user clicks on another service from sidebar, it will fetch that service details.
+
+  return (
+    <>
+      <Header />
+
+      <main>
+        <Banner
+          heading={'Shaping Tomorrows <br /> Structures Today'}
+          title={service?.title || ''}
+          text={''}
+          bgImage={BannerImg}
+        />
+
+        <section className="section-9 pt-lg-5 pt-4 pb-2">
+          <div className="container py-5">
+            <div className="row">
+              <div className="col-md-3 mb-5 mb-md-0">
+                <div className="card shadow border-0 sidebar-card">
+                  <div className="card-body px-4 py-4">
+                    <h3 className="mt-2 mb-3">Our Services</h3>
+                    <ul
+                      className="list-unstyled scrollable-list"
+                      style={{ fontSize: '17px' }}
+                    >
+                      {services.map((service) => {
+                        return (
+                          <li key={service.id}>
+                            <NavLink
+                              to={`/service/${service.id}`}
+                              className="text-decoration-none link-item"
+                            >
+                              {service.title}
+                            </NavLink>
+                            <hr />
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* only show loading skeleton while fetching data from api */}
+              {loading && (
+                <div className="container">
+                  <SkeletonLoader bars={3} width="8px" />
+                </div>
+              )}
+
+              {/* show service details when data is fetched from api */}
+              {!loading && service && (
+                <div className="col-md-9 ps-md-4 ps-0 pe-0">
+                  <div>
+                    {service.image && (
+                      <img
+                        src={`${fileUrl}/uploads/services/large/${service.image}`}
+                        alt={service.title}
+                        className="mb-4 w-100 shadow border-0"
+                      />
+                    )}
+                    <h3 className="my-3">{service.title}</h3>
+                    <div>
+                      <div
+                        className="content-description"
+                        dangerouslySetInnerHTML={{ __html: service.content }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* show error message when there is no data fetched from api */}
+              {!loading && !service && <div className="col-md-9">No Data</div>}
+            </div>
+          </div>
+        </section>
+
+        <section className="section-10">
+          <div className="container-fluid bg-light">
+            <div className="row">
+              <div className="col-md-12">
+                <Testimonials />
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </>
+  );
+};
+
+export default ServiceDetail;
