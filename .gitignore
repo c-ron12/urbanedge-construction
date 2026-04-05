@@ -76,3 +76,4 @@ storage/logs/*
 # Docker (if you use it)
 docker-compose.override.yml
 /.docker
+".history/" 
