@@ -65,18 +65,18 @@ const ServiceDetail = () => {
           bgImage={BannerImg}
         />
 
-        <section className="section-9 pt-lg-5 pt-4 pb-2" ref={sectionRef}>
-          <div className="container py-5">
+        <section
+          className="section-9 pt-4 pt-sm-5 pb-2 pb-sm-4"
+          ref={sectionRef}
+        >
+          <div className="container pt-lg-5 pt-4 pb-3">
             <div className="row">
               {/* Sidebar */}
               <div className="col-md-3 mb-5 mb-md-0 ">
                 <div className="card shadow border-0 sidebar-card">
-                  <div className="card-body px-4 py-4">
+                  <div className="card-body p-lg-4 p-3">
                     <h3 className="mt-2 mb-3">Our Services</h3>
-                    <ul
-                      className="list-unstyled scrollable-list"
-                      style={{ fontSize: '17px' }}
-                    >
+                    <ul className="list-unstyled scrollable-list">
                       {services.map((service) => (
                         <li key={service.id}>
                           <NavLink
@@ -95,7 +95,7 @@ const ServiceDetail = () => {
               </div>
 
               {/* Main Content */}
-              <div className="col-md-9 ps-md-4 ps-3">
+              <div className="col-md-9 ps-md-4">
                 <div className="position-relative">
                   {/* {/* only show loading skeleton while fetching data from api */}
                   {loading && (
@@ -118,7 +118,7 @@ const ServiceDetail = () => {
                         />
                       )}
 
-                      <h3 className="my-3">{service.title}</h3>
+                      <h3 className="my-2">{service.title}</h3>
 
                       <div
                         className="content-description"
@@ -142,7 +142,7 @@ const ServiceDetail = () => {
           </div>
         </section>
 
-        <section className="section-10">
+        {/* <section className="section-10">
           <div className="container-fluid bg-light">
             <div className="row">
               <div className="col-md-12">
@@ -150,7 +150,7 @@ const ServiceDetail = () => {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
       </main>
 
       <Footer />

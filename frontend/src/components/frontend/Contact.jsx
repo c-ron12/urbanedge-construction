@@ -59,7 +59,7 @@ const ContactUs = () => {
             </p>
           </div>
 
-          <div className="row pt-5 gx-md-5">
+          <div className="row py-5 pb-4 gx-md-5">
             {/* Contact Form */}
             <div className="col-lg-7 mb-4 py-5 card shadow border-0">
               <form onSubmit={handleSubmit(onSubmit)}>
@@ -163,7 +163,7 @@ const ContactUs = () => {
             </div>
 
             {/* Contact Info */}
-            <div className="col-lg-5 mt-lg-0 mt-4">
+            <div className="col-lg-5 mt-lg-0 mt-4 pb-3">
               <div className="contact-info py-5 px-4 bg-white card shadow border-0 ">
                 <h5 className="mb-4">Contact Details</h5>
                 <p>

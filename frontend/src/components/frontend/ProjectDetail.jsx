@@ -66,18 +66,15 @@ React.useEffect(() => {
           bgImage={ProjectBanner}
         />
 
-        <section className="section-9 pt-lg-5 pt-4 pb-2" ref={sectionRef}>
-          <div className="container py-5">
+        <section className="section-9 pt-4 pt-sm-5 pb-4" ref={sectionRef}>
+          <div className="container pt-lg-5 pt-4 pb-3">
             <div className="row">
               {/* Sidebar */}
               <div className="col-md-3 mb-5 mb-md-0">
                 <div className="card shadow border-0 sidebar-card">
-                  <div className="card-body px-4 py-4">
+                  <div className="card-body p-lg-4 p-3">
                     <h3 className="mt-2 mb-3">Our Projects</h3>
-                    <ul
-                      className="list-unstyled scrollable-list"
-                      style={{ fontSize: '17px' }}
-                    >
+                    <ul className="list-unstyled scrollable-list">
                       {projects.map((project) => (
                         <li key={project.id}>
                           <NavLink
@@ -99,7 +96,7 @@ React.useEffect(() => {
                 {/* Insights */}
                 {!loading && project && (
                   <div className="card shadow border-0 sidebar-card mt-4">
-                    <div className="card-body px-4 py-4">
+                    <div className="card-body p-lg-4 p-3">
                       <h3 className="mt-2 mb-3">Insights</h3>
                       <ul className="list-unstyled">
                         {project.location && (
@@ -131,7 +128,7 @@ React.useEffect(() => {
               </div>
 
               {/* Main Content */}
-              <div className="col-md-9 ps-md-4 ps-0 pe-0">
+              <div className="col-md-9 ps-md-4">
                 <div className="position-relative">
                   {/* Loader centered, only show content when not loading and service exists */}
 
@@ -155,7 +152,7 @@ React.useEffect(() => {
                         />
                       )}
 
-                      <h3 className="my-3">{project.title}</h3>
+                      <h3 className="my-2">{project.title}</h3>
 
                       <div
                         className="content-description"

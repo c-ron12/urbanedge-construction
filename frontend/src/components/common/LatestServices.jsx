@@ -28,8 +28,8 @@ const LatestServices = () => {
 
   return (
     <>
-      <section className="section-3 bg-light pt-5 pb-md-4">
-        <div className="container-fluid pt-lg-5 pt-3 pb-4">
+      <section className="section-3 bg-light pt-4 pt-sm-5 pb-md-4">
+        <div className="container-fluid pt-lg-5 pb-3 pb-md-4">
           <div className="section-header text-center">
             <span>Our Services</span>
             <h2>Our Construction Services</h2>
@@ -39,14 +39,14 @@ const LatestServices = () => {
             </p>
           </div>
           {/* Loading, only show loading skeleton while fetching data from api */}
-          {loading && ( 
+          {loading && (
             <div className="container">
               <SkeletonLoader bars={3} width="8px" />
             </div>
           )}
 
           {/* Only show services when not loading and services exist */}
-          {!loading && services.length > 0 && (    
+          {!loading && services.length > 0 && (
             <div className="row pt-5">
               {services.map((service) => (
                 // The "service" prop here is sent to ServiceCard.jsx.
@@ -55,11 +55,11 @@ const LatestServices = () => {
             </div>
           )}
 
-          {/* Empty State, only show empty state when not loading and no services exist */} 
+          {/* Empty State, only show empty state when not loading and no services exist */}
           {!loading && services.length === 0 && (
             <p className="text-center pt-5">No services found</p>
           )}
-        </div> 
+        </div>
       </section>
     </>
   );

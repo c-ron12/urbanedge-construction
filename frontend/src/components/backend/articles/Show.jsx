@@ -63,17 +63,19 @@ const Show = () => {
 
   return (
     <>
-      <Header />
+      {/* bgClass is the prop coming from Header component, it adds light background to header in this page. */}
+      <Header bgClass="bg-light" />
+
       <main>
         <div className="container my-5">
           <div className="row">
-            <div className="col-md-3">
+            <div className="col-md-3 mb-4 mb-md-0">
               <Sidebar />
             </div>
             <div className="col-md-9">
               <div className="card shadow border-0">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between">
+                  <div className="d-flex justify-content-between border-bottom pb-4">
                     <h5>Articles</h5>
                     <Link
                       to="/admin/articles/create"
@@ -82,53 +84,62 @@ const Show = () => {
                       Create
                     </Link>
                   </div>
-                  <hr />
+
                   {loading ? (
                     <div className="text-center my-5">
                       <Spinner animation="border" variant="primary" />
                     </div>
                   ) : (
-                    <table className="table table-striped">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Title</th>
-                          {/* <th>Slug</th> */}
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {articles &&
-                          articles.map((article) => (
-                            <tr key={article.id}>
-                              <td>{article.id}</td>
-                              <td>{article.title}</td>
-                              {/* <td>{article.slug}</td> */}
+                    <div className="table-responsive">
+                      <table className="table align-middle">
+                        <thead className="table-light border-bottom">
+                          <tr>
+                            <th className="py-3">ID</th>
+                            <th className="py-3">Title</th>
+                            <th className="py-3">Status</th>
+                            <th className="py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {articles &&
+                            articles.map((article) => (
+                              <tr key={article.id}>
+                                <td>{article.id}</td>
+                                <td style={{ maxWidth: '250px' }}>
+                                  <div
+                                    className="text-truncate"
+                                    title={article?.title}
+                                  >
+                                    {article?.title}
+                                  </div>
+                                </td>
 
-                              <td>
-                                {article.status == 1 ? 'Active' : 'Inactive'}
-                              </td>
+                                <td>
+                                  {article.status == 1 ? 'Active' : 'Inactive'}
+                                </td>
 
-                              <td>
-                                <Link
-                                  to={`/admin/articles/edit/${article.id}`}
-                                  className="btn btn-sm btn-info me-2"
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  onClick={() => deleteArticle(article.id)}
-                                  type="button"
-                                  className="btn btn-sm btn-danger"
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                                <td>
+                                  <div class="d-flex flex-wrap custom-gap">
+                                    <Link
+                                      to={`/admin/articles/edit/${article.id}`}
+                                      className="btn btn-sm btn-info"
+                                    >
+                                      Edit
+                                    </Link>
+                                    <button
+                                      onClick={() => deleteArticle(article.id)}
+                                      type="button"
+                                      className="btn btn-sm btn-danger"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>

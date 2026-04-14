@@ -66,9 +66,9 @@ const BlogDetail = () => {
           bgImage={BannerImg}
         />
 
-        <section className="section-10 pt-5 pb-md-4 pb-3" ref={sectionRef}>
-          <div className="container pt-lg-5 pt-4 pb-4">
-            <div className="row gx-5">
+        <section className="section-10 pt-5 pb-4" ref={sectionRef}>
+          <div className="container pt-lg-4 pt-2 pb-4">
+            <div className="row gx-md-5 gx-0">
               {/* Main Content */}
               <div className="col-md-8">
                 <div className="position-relative">

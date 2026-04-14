@@ -4,9 +4,14 @@ import Navbar from 'react-bootstrap/Navbar';
 import { NavLink } from 'react-router-dom';
 import logo from '../../assets/images/logo.png';
 
-const Header = () => {
+{
+  /* Header component with bgClass prop to set background color, used in backend pages to differentiate from frontend. */
+}
+const Header = ({ bgClass = '' }) => {
   return (
-    <header>
+    <header className={bgClass}>
+      {/* bgClass is a prop that allows us to pass a CSS class, in this case, no css property is used, but in backend pages we pass "bg-light" to add light background to header. */}
+
       <div className="container-fluid px-4 py-1">
         <Navbar expand="lg">
           <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -25,8 +30,7 @@ const Header = () => {
 
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ms-auto">
-          
+            <Nav className="ms-auto mt-3 mt-lg-0">
               <NavLink to="/" className="nav-link" end>
                 Home
               </NavLink>

@@ -46,8 +46,8 @@ const Projects = () => {
         />
       </main>
 
-      <section className="section-3 bg-light pt-5 pb-1 pb-md-4">
-        <div className="container-fluid pt-lg-5 pt-3 pb-4">
+      <section className="section-3 bg-light pt-4 pt-sm-5 pb-md-4">
+        <div className="container-fluid pt-lg-5 pt-3 pb-3">
           <div className="section-header text-center">
             <span>Our Projects</span>
             <h2>Discover our diverse range of projects</h2>

@@ -7,7 +7,7 @@ const Sidebar = () => {
   return (
     <>
       <div className="card shadow border-0 mb-4 mb-md-0">
-        <div className="card-body p-4 sidebar">
+        <div className="card-body p-lg-4 p-3 sidebar">
           <h4 className="pb-3">SideBar</h4>
           <ul>
             <li>

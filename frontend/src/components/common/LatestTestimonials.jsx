@@ -32,8 +32,8 @@ const LatestTestimonials = () => {
   }, []);
 
   return (
-    <section className="section-5 pt-5 pb-md-4">
-      <div className="container pt-lg-5 pt-3 pb-5">
+    <section className="section-5 pt-4 pt-sm-5 pb-md-4">
+      <div className="container pt-lg-5 pb-3 pb-md-43">
         <div className="section-header text-center">
           <span>Testimonials</span>
           <h2>Trusted by our valued customers</h2>
@@ -72,7 +72,7 @@ const LatestTestimonials = () => {
               {testimonials.map((testimonial) => (
                 <SwiperSlide key={testimonial.id}>
                   <div className="card shadow border-0">
-                    <div className="card-body p-5">
+                    <div className="card-body p-5 h">
                       <div className="rating">
                         {[...Array(5)].map((_, i) => (
                           <svg

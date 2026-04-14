@@ -65,17 +65,19 @@ const Show = () => {
 
   return (
     <>
-      <Header />
+      {/* bgClass is the prop coming from Header component, it adds light background to header in this page.*/}
+      <Header bgClass="bg-light" />
+
       <main>
         <div className="container my-5">
           <div className="row">
-            <div className="col-md-3">
+            <div className="col-md-3 mb-4 mb-md-0">
               <Sidebar />
             </div>
             <div className="col-md-9">
               <div className="card shadow border-0">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between">
+                  <div className="d-flex justify-content-between border-bottom pb-4">
                     <h5>Services</h5>
                     <Link
                       to="/admin/services/create"
@@ -84,54 +86,69 @@ const Show = () => {
                       Create
                     </Link>
                   </div>
-                  <hr />
 
                   {loading ? (
                     <div className="text-center my-5">
                       <Spinner animation="border" variant="primary" />
                     </div>
                   ) : (
-                    <table className="table table-striped">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Name</th>
-                          <th>Slug</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {services &&
-                          services.map((service) => (
-                            <tr key={service.id}>
-                              <td>{service.id}</td>
-                              <td>{service.title}</td>
-                              <td>{service.slug}</td>
+                    <div className="table-responsive">
+                      <table className="table align-middle">
+                        <thead className="table-light border-bottom">
+                          <tr>
+                            <th className="py-3">ID</th>
+                            <th className="py-3">Name</th>
+                            <th className="py-3">Slug</th>
+                            <th className="py-3">Status</th>
+                            <th className="py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {services &&
+                            services.map((service) => (
+                              <tr key={service.id}>
+                                <td>{service.id}</td>
+                                <td style={{ maxWidth: '250px' }}>
+                                  <div
+                                    className="text-truncate"
+                                    title={service?.title}
+                                  >
+                                    {service?.title}
+                                  </div>
+                                </td>
+                                 <td style={{ maxWidth: '250px' }}>
+                                  <div
+                                    className="text-truncate"
+                                    title={service?.slug}
+                                  >
+                                    {service?.slug}
+                                  </div>
+                                </td>
 
-                              <td>
-                                {service.status == 1 ? 'Active' : 'Inactive'}
-                              </td>
+                                <td>
+                                  {service.status == 1 ? 'Active' : 'Inactive'}
+                                </td>
 
-                              <td>
-                                <Link
-                                  to={`/admin/services/edit/${service.id}`}
-                                  className="btn btn-sm btn-info me-2"
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  onClick={() => deleteService(service.id)}
-                                  type="button"
-                                  className="btn btn-sm btn-danger"
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                                <td>
+                                  <Link
+                                    to={`/admin/services/edit/${service.id}`}
+                                    className="btn btn-sm btn-info me-3 mb-2 mb-xl-0"
+                                  >
+                                    Edit
+                                  </Link>
+                                  <button
+                                    onClick={() => deleteService(service.id)}
+                                    type="button"
+                                    className="btn btn-sm btn-danger"
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>

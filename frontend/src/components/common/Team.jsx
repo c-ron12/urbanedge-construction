@@ -25,7 +25,7 @@ const Team = () => {
   }, []);
 
   return (
-    <section className="section-8 pt-5 pb-md-4 bg-light">
+    <section className="section-8 pt-4 pt-sm-5 pb-md-4 bg-light">
       <div className="container-fluid pt-lg-5 pt-3 pb-4">
         <div className="section-header text-center">
           <span>Our Team</span>

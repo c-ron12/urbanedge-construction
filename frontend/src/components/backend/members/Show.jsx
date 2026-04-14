@@ -63,17 +63,19 @@ const show = () => {
 
   return (
     <>
-      <Header />
+      {/* bgClass is the prop coming from Header component, it adds light background to header in this page.*/}
+      <Header bgClass="bg-light" />
+
       <main>
         <div className="container my-5">
           <div className="row">
-            <div className="col-md-3">
+            <div className="col-md-3 mb-4 mb-md-0">
               <Sidebar />
             </div>
             <div className="col-md-9">
               <div className="card shadow border-0">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between">
+                <div className="card-body p-4">
+                  <div className="d-flex justify-content-between border-bottom pb-4">
                     <h5>Members</h5>
                     <Link
                       to="/admin/members/create"
@@ -82,54 +84,55 @@ const show = () => {
                       Create
                     </Link>
                   </div>
-                  <hr />
 
                   {loading ? (
                     <div className="text-center my-5">
                       <Spinner animation="border" variant="primary" />
                     </div>
                   ) : (
-                    <table className="table table-striped">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Name</th>
-                          <th>Designation</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {members &&
-                          members.map((member) => (
-                            <tr key={member.id}>
-                              <td>{member.id}</td>
-                              <td>{member.name}</td>
-                              <td>{member.designation}</td>
+                    <div className="table-responsive">
+                      <table className="table align-middle">
+                        <thead className="table-light border-bottom">
+                          <tr>
+                            <th className="py-3">ID</th>
+                            <th className="py-3">Name</th>
+                            <th className="py-3">Designation</th>
+                            <th className="py-3">Status</th>
+                            <th className="py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {members &&
+                            members.map((member) => (
+                              <tr key={member.id}>
+                                <td>{member.id}</td>
+                                <td>{member.name}</td>
+                                <td>{member.designation}</td>
 
-                              <td>
-                                {member.status == 1 ? 'Active' : 'Inactive'}
-                              </td>
+                                <td>
+                                  {member.status == 1 ? 'Active' : 'Inactive'}
+                                </td>
 
-                              <td>
-                                <Link
-                                  to={`/admin/members/edit/${member.id}`} // member is the variable from map function.
-                                  className="btn btn-sm btn-info me-2"
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  onClick={() => deleteMember(member.id)}
-                                  type="button"
-                                  className="btn btn-sm btn-danger"
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                                <td>
+                                  <Link
+                                    to={`/admin/members/edit/${member.id}`} // member is the variable from map function.
+                                    className="btn btn-sm btn-info me-3 mb-2 mb-lg-0"
+                                  >
+                                    Edit
+                                  </Link>
+                                  <button
+                                    onClick={() => deleteMember(member.id)}
+                                    type="button"
+                                    className="btn btn-sm btn-danger"
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>

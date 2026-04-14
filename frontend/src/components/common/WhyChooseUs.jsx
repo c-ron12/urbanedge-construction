@@ -6,8 +6,8 @@ import Icon3 from '../../assets/images/icon-3.svg';
 const WhyChooseUs = () => {
   return (
     <>
-      <section className="section-4 pt-5 pb-md-4">
-        <div className="container pt-lg-5 pt-3 pb-4">
+      <section className="section-4 pt-4 pt-sm-5 pb-md-4">
+        <div className="container pt-lg-5 pt-4 pb-3 pb-md-4">
           <div className="section-header text-center">
             <span>Why Choose Us</span>
             <h2>Excellence is Our Standard</h2>

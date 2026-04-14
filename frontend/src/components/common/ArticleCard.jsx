@@ -5,7 +5,7 @@ import { fileUrl } from './http';
 const ArticleCard = ({ article }) => {
   return (
     <>
-      <div className="col-lg-4 col-md-6 mb-5 gx-5">
+      <div className="col-lg-4 col-md-6 mb-5 gx-md-5 gx-4">
         <div className="card shadow border-0 h-100">
           <div className="card-img-top">
             {

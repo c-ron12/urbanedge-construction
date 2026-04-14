@@ -3,16 +3,15 @@ import AboutImg from '../../assets/images/about-us.jpg';
 const About = () => {
   return (
     // About Us Section.
-    <section className="section-2 pt-5 pb-md-4 pb-3">
-      <div className="container pt-lg-5 pt-4 pb-4">
+    <section className="section-2 pt-4 pt-sm-5 pb-md-4 pb-3">
+      <div className="container pt-lg-5 pt-4 pb-3 pb-md-4">
         <div className="row">
           <div className="col-lg-6">
             <img src={AboutImg} className="w-100" alt="About Us" />
           </div>
 
-          <div className="col-lg-6 px-4 pt-5 pt-lg-0">
-            
-            <span>About Us</span>
+          <div className="col-lg-6 px-4 pt-4 pt-lg-0">
+            <span className="pt-1 pt-lg-0" >About Us</span>
 
             <h2>Crafting structures that last a lifetime</h2>
             <p>

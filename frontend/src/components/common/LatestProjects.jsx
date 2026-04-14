@@ -29,17 +29,17 @@ const LatestProjects = () => {
 
   return (
     <>
-      <section className="section-3 bg-light pt-5 pb-1 pb-md-4">
-        <div className="container-fluid pt-lg-5 pt-3 pb-4">
+      <section className="section-3 bg-light pt-4 pt-sm-5 pb-1 pb-md-4">
+        <div className="container-fluid pt-lg-5 pb-3 pb-md-4">
           <div className="section-header text-center">
             <span>Our Projects</span>
             <h2>Discover our diverse range of projects</h2>
-            <p className='title-desc-text'>
+            <p className="title-desc-text">
               A showcase of our commitment to quality craftsmanship and client
               satisfaction.
             </p>
           </div>
-          {/* only show loading skeleton while fetching data from api */}  
+          {/* only show loading skeleton while fetching data from api */}
           {loading && (
             <div className="container">
               <SkeletonLoader bars={3} width="8px" />
@@ -47,7 +47,7 @@ const LatestProjects = () => {
           )}
 
           {/* only show projects when not loading and projects exist */}
-          {!loading && projects.length > 0 && (   
+          {!loading && projects.length > 0 && (
             <div className="row pt-5">
               {projects.map((project) => (
                 // The "project" prop here is sent to ProjectCard.jsx.
@@ -56,11 +56,10 @@ const LatestProjects = () => {
             </div>
           )}
 
-          {/* only show empty state when not loading and no projects exist */} 
+          {/* only show empty state when not loading and no projects exist */}
           {!loading && projects.length === 0 && (
             <p className="text-center pt-5">No projects found</p>
           )}
-          
         </div>
       </section>
     </>
