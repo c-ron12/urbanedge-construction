@@ -35,13 +35,14 @@ UrbanEdge Construction is a full-stack web application built with React (fronten
 
 ## 📸 Screenshots
 
-<!-- Add screenshots here -->
+| Homepage Hero | Mobile Navigation | Admin Panel (Services) |
+|:-------------:|:----------------:|:----------------------:|
+| ![Homepage Hero](https://github.com/user-attachments/assets/6b3e1f29-b033-4792-9236-16d8c494ee51) | ![Mobile Navigation](https://github.com/user-attachments/assets/c36ec471-e753-4f1d-9dc3-6fc78281356b) | ![Admin Panel](https://github.com/user-attachments/assets/65b59d9e-3a02-4be6-bdb4-3503606829ef) |
 
-<!-- Example:
-![Home Page](./screenshots/home.png)
--->
+| Services Page | Projects Page |
+|:-------------:|:-------------:|
+| ![Services Page](https://github.com/user-attachments/assets/0c6f28b6-c90c-4aee-b8d8-40b5af1cd0d9) | ![Projects Page](https://github.com/user-attachments/assets/e1a70534-9c49-4309-9690-323c6256bca8) |
 
----
 
 ## ⚙️ Installation & Setup
 
