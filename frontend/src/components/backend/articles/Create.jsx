@@ -111,8 +111,8 @@ const Create = ({ placeholder = 'content' }) => {
       <Header bgClass="bg-light" />
 
       <main>
-        <div className="container my-5">
-          <div className="row">
+        <div className="container my-sm-5 my-4 pt-5 pb-4">
+          <div className="row mt-5">
             <div className="col-md-3">
               <Sidebar />
             </div>

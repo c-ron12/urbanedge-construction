@@ -53,10 +53,10 @@ const BlogDetail = () => {
   }, [params.id]); // Added params.id as a dependency to refetch when the id changes, means when user clicks on another service from sidebar, it will fetch that service details.
 
   return (
-    <> 
+    <>
       <Header />
 
-      <main>
+      <main style ={{ marginTop: '80px' }}>
         <Banner
           heading={
             'Projects That Define Us and Reflect <br /> Our Commitment to Excellence'
@@ -84,7 +84,7 @@ const BlogDetail = () => {
 
                   {/* Loader Centered, only show content when not loading and article exists */}
                   {!loading && article && (
-                    <>   
+                    <>
                       <h3>{article.title}</h3>
 
                       <div className="pb-3">

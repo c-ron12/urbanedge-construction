@@ -57,7 +57,7 @@ const ServiceDetail = () => {
     <>
       <Header />
 
-      <main>
+      <main style ={{ marginTop: '80px' }}>
         <Banner
           heading={'Shaping Tomorrows <br /> Structures Today'}
           title={service?.title || ''}

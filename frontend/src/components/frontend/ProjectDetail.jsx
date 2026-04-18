@@ -56,7 +56,7 @@ React.useEffect(() => {
   return (
     <>
       <Header />
-      <main>
+      <main style ={{ marginTop: '80px' }}>
         <Banner
           heading={
             'Projects That Define Us and Reflect <br /> Our Commitment to Excellence'

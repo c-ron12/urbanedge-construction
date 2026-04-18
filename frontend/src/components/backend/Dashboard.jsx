@@ -6,11 +6,11 @@ const Dashboard = () => {
   return (
     <>
       {/* bgClass is the prop coming from Header component, it adds light background to header in this page.*/}
-      <Header bgClass="bg-light" />
+      <Header />
 
       <main>
-        <div className="container my-5">
-          <div className="row">
+        <div className="container my-5 py-5">
+          <div className="row mt-5">
             <div className="col-md-3 mb-4 mb-md-0">
               <Sidebar />
             </div>

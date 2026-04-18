@@ -5,12 +5,11 @@ import Banner from '../common/Banner';
 import WhyChooseUs from '../common/WhyChooseUs';
 import Team from '../common/Team';
 
-
 const About = () => {
   return (
     <>
       <Header />
-      <main>
+      <main style={{ marginTop: '80px' }}>
         <Banner
           preHeading={'About Us'}
           heading={'Building excellence, <br /> shaping the future'}
@@ -18,15 +17,16 @@ const About = () => {
             'Our passion lies in designing and delivering enduring structures that blend innovation, precision, and integrity.<br />Every project reflects our promise to create value that stands the test of time.'
           }
         />
+
+        <AboutNew />
+
+        {/* Our Team */}
+
+        <Team />
+
+        <WhyChooseUs />
+        
       </main>
-
-      <AboutNew />
-
-      {/* Our Team */}
-
-      <Team />
-
-      <WhyChooseUs />
 
       <Footer />
     </>
