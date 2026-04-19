@@ -1,30 +1,34 @@
 import React from 'react';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-// import { Link } from 'react-router-dom';   // Used NavLink instead of Link for active Nav Menu item styling.
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom'; // 1. Import useLocation
 import logo from '../../assets/images/logo.png';
 
-
 const Header = () => {
-  const [scrolled, setScrolled] =  React.useState(false);
+  const [scrolled, setScrolled] = React.useState(false);
+  const location = useLocation(); // 2. Get the current location
+
+  // 3. Helper function to determine if a link is active
+  const isActive = (path) => {
+    // Exact match for home
+    if (path === '/') return location.pathname === '/';
+    // Partial match for other pages (e.g., /service/36 matches /services)
+    return (
+      location.pathname.startsWith(path) ||
+      location.pathname.startsWith(path.replace('s', ''))
+    );
+  };
 
   React.useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 50);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <header className={scrolled ? 'sticky-active' : ''}>
-
       <div className="container-fluid px-4 py-1">
         <Navbar expand="lg">
           <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -44,22 +48,52 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto mt-3 mt-lg-0">
-              <NavLink to="/" className="nav-link" end>
+              {/* Home */}
+              <NavLink
+                to="/"
+                className={`nav-link ${isActive('/') ? 'active' : ''}`}
+                end
+              >
                 Home
               </NavLink>
-              <NavLink to="/about" className="nav-link">
+
+              {/* About */}
+              <NavLink
+                to="/about"
+                className={`nav-link ${isActive('/about') ? 'active' : ''}`}
+              >
                 About Us
               </NavLink>
-              <NavLink to="/services" className="nav-link">
+
+              {/* Services */}
+              <NavLink
+                to="/services"
+                className={`nav-link ${isActive('/services') ? 'active' : ''}`}
+              >
                 Services
               </NavLink>
-              <NavLink to="/projects" className="nav-link">
+
+              {/* Projects */}
+              <NavLink
+                to="/projects"
+                className={`nav-link ${isActive('/projects') ? 'active' : ''}`}
+              >
                 Projects
               </NavLink>
-              <NavLink to="/blogs" className="nav-link">
+
+              {/* Blogs */}
+              <NavLink
+                to="/blogs"
+                className={`nav-link ${isActive('/blogs') ? 'active' : ''}`}
+              >
                 Blogs
               </NavLink>
-              <NavLink to="/contact" className="nav-link">
+
+              {/* Contact */}
+              <NavLink
+                to="/contact"
+                className={`nav-link ${isActive('/contact') ? 'active' : ''}`}
+              >
                 Contact Us
               </NavLink>
             </Nav>
