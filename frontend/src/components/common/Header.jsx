@@ -10,13 +10,29 @@ const Header = () => {
 
   // 3. Helper function to determine if a link is active
   const isActive = (path) => {
-    // Exact match for home
-    if (path === '/') return location.pathname === '/';
-    // Partial match for other pages (e.g., /service/36 matches /services)
-    return (
-      location.pathname.startsWith(path) ||
-      location.pathname.startsWith(path.replace('s', ''))
-    );
+    // 1. Exact match (e.g., Home, Contact)
+    if (location.pathname === path) return true;
+
+    // 2. Define "Detail Page" relationships
+    // This says: "If I am on /service, keep /services active"
+    const parentRoutes = {
+      '/service': '/services',
+      '/project': '/projects',
+      '/blog': '/blogs',
+    };
+
+    // 3. Check if the current URL starts with any of our parent paths
+    // Object.keys gives us ['/service', '/project', ...]
+    const basePaths = Object.keys(parentRoutes);
+
+    for (const base of basePaths) {
+      if (location.pathname.startsWith(base)) {
+        // If the current URL starts with '/service', return true for '/services'
+        return path === parentRoutes[base];
+      }
+    }
+
+    return false;
   };
 
   React.useEffect(() => {
