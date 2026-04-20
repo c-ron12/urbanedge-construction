@@ -4,6 +4,8 @@ import Banner from '../common/Banner';
 import ContactPic from '../../assets/images/contactPic.jpg';
 import { useForm } from 'react-hook-form'; // Import the useForm hook from react-hook-form
 import { apiUrl } from '../common/http';
+import { toast } from 'react-toastify';
+import { Spinner } from 'react-bootstrap';
 
 const ContactUs = () => {
   const {
@@ -11,26 +13,32 @@ const ContactUs = () => {
     handleSubmit,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm(); // Initialize the useForm hook from react-hook-form
 
   const onSubmit = async (data) => {
-    console.log(data); // Log the form data to the console on form submission
-    const res = await fetch(`${apiUrl}/contact`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', // Tells the server the body of the request is JSON data.
-      },
-      body: JSON.stringify(data), // Converts the JavaScript object data into a JSON string to be sent as the request body.
-    });
+    try {
+      console.log(data); // Log the form data to the console on form submission
+      const res = await fetch(`${apiUrl}/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // Tells the server the body of the request is JSON data.
+        },
+        body: JSON.stringify(data), // Converts the JavaScript object data into a JSON string to be sent as the request body.
+      });
 
-    const result = await res.json(); // Parse the JSON response body from the server.
+      const result = await res.json(); // Parse the JSON response body from the server.
 
-    if (result.status === true) {
-      toast.success(result.message); // message is coming from backend API response from ContactController.php, index() method.
-      reset(); // Reset the form fields after successful submission.
-    } else {
-      toast.error(result.message);
+      if (result.status === true) {
+        toast.success(result.message); // message is coming from backend API response from ContactController.php, index() method.
+        reset(); // Reset the form fields after successful submission.
+      } else {
+        // Handles cases where status is false (e.g., validation errors)
+        toast.error(result.message || 'Something went wrong.');
+      }
+    } catch (error) {
+      // Handles network-level issues
+      toast.error('Network error, please try again later.');
     }
   };
   return (
@@ -46,7 +54,7 @@ const ContactUs = () => {
           bgImage={ContactPic}
         />
 
-        <section className="section-8 pt-5 pb-md-4 bg-light">
+        <section className="section-8 pt-4 pt-sm-5 pb-md-4 bg-light">
           <div className="container pt-lg-5 pt-3 pb-4">
             {/* Section Header */}
             <div className="section-header text-center">
@@ -60,105 +68,121 @@ const ContactUs = () => {
 
             <div className="row py-5 pb-4 gx-md-5">
               {/* Contact Form */}
-              <div className="col-lg-7 mb-4 py-5 card shadow border-0">
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="mb-3">
-                    <label htmlFor="fullname" className="form-label">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      {...register('fullname', {
-                        required: 'Full Name is required',
-                      })}
-                      className={`form-control ${errors.fullname ? 'is-invalid' : ''}`}
-                      id="fullname"
-                      autoComplete="fullname"
-                    />
-                    {errors.fullname && (
-                      <p className="text-danger pt-2 invalid-feedback">
-                        {errors.fullname.message}
-                      </p>
-                    )}
-                  </div>
+              <div className="col-lg-7 mb-4">
+                <div className="contact-form py-5 px-4 bg-white card shadow border-0 ">
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="mb-3">
+                      <label htmlFor="fullname" className="form-label">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        {...register('fullname', {
+                          required: 'Full Name is required',
+                        })}
+                        className={`form-control ${errors.fullname ? 'is-invalid' : ''}`}
+                        id="fullname"
+                        autoComplete="fullname"
+                      />
+                      {errors.fullname && (
+                        <p className="text-danger pt-2 invalid-feedback">
+                          {errors.fullname.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="mb-3">
-                    <label htmlFor="email" className="form-label">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      {...register('email', {
-                        required: 'Email Address is required',
-                        pattern: {
-                          value:
-                            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                          message: 'Please enter a valid email address',
-                        },
-                      })}
-                      className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                      id="email"
-                    />
-                    {errors.email && (
-                      <p className="text-danger pt-2 invalid-feedback">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
+                    <div className="mb-3">
+                      <label htmlFor="email" className="form-label">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        {...register('email', {
+                          required: 'Email Address is required',
+                          pattern: {
+                            value:
+                              /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                            message: 'Please enter a valid email address',
+                          },
+                        })}
+                        className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                        id="email"
+                      />
+                      {errors.email && (
+                        <p className="text-danger pt-2 invalid-feedback">
+                          {errors.email.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="mb-3">
-                    <label htmlFor="address" className="form-label">
-                      Address
-                    </label>
-                    <input
-                      {...register('address')}
-                      type="text"
-                      className="form-control"
-                      id="address"
-                      autoComplete="street-address"
-                    />
-                  </div>
+                    <div className="mb-3">
+                      <label htmlFor="address" className="form-label">
+                        Address
+                      </label>
+                      <input
+                        {...register('address')}
+                        type="text"
+                        className="form-control"
+                        id="address"
+                        autoComplete="street-address"
+                      />
+                    </div>
 
-                  <div className="mb-3">
-                    <label htmlFor="subject" className="form-label">
-                      Subject
-                    </label>
-                    <input
-                      type="text"
-                      {...register('subject')}
-                      className="form-control"
-                      id="subject"
-                    />
-                  </div>
+                    <div className="mb-3">
+                      <label htmlFor="subject" className="form-label">
+                        Subject
+                      </label>
+                      <input
+                        type="text"
+                        {...register('subject')}
+                        className="form-control"
+                        id="subject"
+                      />
+                    </div>
 
-                  <div className="mb-3">
-                    <label htmlFor="phone" className="form-label">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      {...register('phone')}
-                      className="form-control"
-                      id="phone"
-                    />
-                  </div>
+                    <div className="mb-3">
+                      <label htmlFor="phone" className="form-label">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        {...register('phone')}
+                        className="form-control"
+                        id="phone"
+                      />
+                    </div>
 
-                  <div className="mb-3">
-                    <label htmlFor="message" className="form-label">
-                      Message
-                    </label>
-                    <textarea
-                      {...register('message')}
-                      className="form-control"
-                      id="message"
-                      rows="5"
-                    ></textarea>
-                  </div>
+                    <div className="mb-3">
+                      <label htmlFor="message" className="form-label">
+                        Message
+                      </label>
+                      <textarea
+                        {...register('message')}
+                        className="form-control"
+                        id="message"
+                        rows="5"
+                      ></textarea>
+                    </div>
 
-                  <button type="submit" className="btn btn-primary small-btn">
-                    Send Message
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      className="btn btn-primary d-flex align-items-center ps-2"
+                      disabled={isSubmitting}
+                    >
+                      Submit
+                      {isSubmitting && (
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="ms-2"
+                        />
+                      )}
+                    </button>
+                  </form>
+                </div>
               </div>
 
               {/* Contact Info */}

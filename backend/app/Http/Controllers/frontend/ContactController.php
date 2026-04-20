@@ -38,7 +38,7 @@ class ContactController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Email sent successfully.'
+            'message' => 'Your message has been sent successfully, We will contact you soon.'
         ]);
     }
 }

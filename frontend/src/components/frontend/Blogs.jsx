@@ -43,7 +43,7 @@ const Blogs = () => {
           bgImage={BlogBanner}
         />
 
-        <section className="section-6 bg-light pt-5 pb-md-4">
+        <section className="section-6 bg-light pt-4 pt-sm-5 pb-md-4">
           <div className="container pt-lg-5 pt-3 pb-3">
             <div className="section-header text-center">
               <span>Article and Blogs</span>

@@ -82,6 +82,12 @@ p {
   }
 }
 
+@media (max-width: 457px) {
+  main {
+    margin-top: 75px !important;
+  }
+}
+
 // Override Bootstrap's focus state
 .form-control,
 .form-select {
