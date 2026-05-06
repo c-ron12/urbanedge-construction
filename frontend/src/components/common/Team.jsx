@@ -2,27 +2,16 @@ import { apiUrl } from './http';
 import React from 'react';
 import { fileUrl } from './http';
 import SkeletonLoader from '../common/SkeletonLoader';
-
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no members are found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 const Team = () => {
-  const [teamMembers, setTeamMembers] = React.useState([]);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-
-  // Api call to fetch team members.
-  const fetchTeamMembers = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-members`);
-      const result = await res.json();
-      setTeamMembers(result.data); // data is coming from backend API response from MemberController, index()
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  React.useEffect(() => {
-    fetchTeamMembers();
-  }, []);
+  // use hook to manage all state and fetch latest testimonials.
+  const {
+    data: teamMembers,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-members`);
 
   return (
     <section className="section-8 pt-4 pt-sm-5 pb-md-4 bg-light">
@@ -98,7 +87,31 @@ const Team = () => {
 
         {/* only show empty state when not loading and no members exist */}
         {!loading && teamMembers.length === 0 && (
-          <p className="text-center pt-5">No members found</p>
+          <EmptyState>
+            <h5>
+              {error ? 'Error loading team members' : 'No team members found'}
+            </h5>
+            <p className="text-muted mb-0">
+              {error || 'We couldn’t find any team members at the moment.'}
+            </p>
+
+            {error === 'Unexpected data received.' ? (
+              <Link
+                to="/contact"
+                className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+              >
+                Contact Support
+              </Link>
+            ) : (
+              <span
+                role="button"
+                onClick={refetch}
+                className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+              >
+                {error ? 'Retry' : 'Refresh'}
+              </span>
+            )}
+          </EmptyState>
         )}
       </div>
     </section>

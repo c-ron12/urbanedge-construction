@@ -9,6 +9,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'; // using usePar
 import JoditEditor from 'jodit-react'; // WYSIWYG editor
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 // EDIT PROJECT FORM
 const Edit = ({ placeholder = 'content' }) => {
   // The placeholder prop is used to customize the text hint displayed in the Jodit Editor.
@@ -41,20 +44,22 @@ const Edit = ({ placeholder = 'content' }) => {
   // Fetch project data on component mount
   React.useEffect(() => {
     const fetchProject = async () => {
-      setLoading(true); // start loading
-      try {
-        const res = await fetch(`${apiUrl}/projects/${params.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
-        const result = await res.json();
-        setContent(result.data.content); // to set content in wising editor from fetched data.
-        setProject(result.data); // to store fetched project data in state, data is coming from backend api ProjectController@show.
+      setLoading(true); // start loading, show loading spinner
 
+      // --- API call to fetch project by id ---
+      try {
+        const result = await request(`${apiUrl}/projects/${params.id}`);
+
+        if (result.status === false) {
+          toast.error('Failed to fetch project');
+          setLoading(false); // stop loading
+          return;
+        }
+
+        setProject(result.data); // Store fetched project data in state, data is coming from backend api admin/projectController@show.
+        setContent(result.data.content); // Set content in wising editor from fetched data.
+
+        // set default filled values after fetching data
         reset({
           title: result.data.title,
           slug: result.data.slug,
@@ -63,47 +68,46 @@ const Edit = ({ placeholder = 'content' }) => {
           construction_type: result.data.construction_type,
           sector: result.data.sector,
           short_desc: result.data.short_desc,
-          status: result.data.status,
+          status: result.data.staus,
         });
       } catch (error) {
-        toast.error('Failed to fetch project');
+        toast.error(getErrorMessage(error, 'Failed to fetch project'));
       } finally {
-        setLoading(false); // stop loading
+        setLoading(false); // stop loading, hide loading spinner
       }
     };
 
     fetchProject();
-  }, [params.id, reset]);
+  }, [params.id, reset]); //// params.id is project id from URL and reset is used to reset form default values
 
+  // --- Form Submit Handler ---
   const onSubmit = async (data) => {
-    //// data is a parameter and the value it receives is object of all form data.
+    // data is a parameter and the value it receives is object of all form data.
 
-    setIsDisabled(true); // ADDED THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
+    setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
     const newData = { ...data, content: content, imageId: imageId };
     // ...data means all data from form, content is wising editor data, imageId is uploaded image id that we are getting from handleFile function in below.
     // newData is variable and the value it receives is object of all form data + content from wysiwyg editor.
 
-    // --- API Call to Edit Project ---
-    const res = await fetch(`${apiUrl}/projects/${params.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token()}`,
-      },
-      body: JSON.stringify(newData),
-    });
+    // --- API call to edit projects ---
+    try {
+      const result = await request(`${apiUrl}/projects/${params.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(newData),
+      });
 
-    const result = await res.json();
+      if (result.status === true) {
+        toast.success(result.message); // message is coming from backend API response from admin/ProjectController.php, update() method.
 
-    if (result.status === true) {
-      // status coming from backend api response.
-      toast.success(result.message); // message is coming backend API response from ProjectController.php, update() method.
-      navigate('/admin/projects');
-    } else {
-      toast.error(result.message);
+        navigate('/admin/projects');
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Update failed'));
+    } finally {
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
-    setIsDisabled(false);
   };
 
   // Image upload handler
@@ -117,31 +121,24 @@ const Edit = ({ placeholder = 'content' }) => {
     formData.append('image', file);
     setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
 
+    // --- API call to upload image ---
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
         setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from TempImageController.php, store() method.
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
-      setIsDisabled(false);
     } catch (error) {
-      setImagePreview(null);
-      toast.error('Image upload failed');
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      // Clean up: This runs if the 'try' finishes OR if the 'catch' runs, It ensures the user can always try again.
-      setIsDisabled(false);
+      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 

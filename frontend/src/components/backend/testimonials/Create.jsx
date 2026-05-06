@@ -9,7 +9,10 @@ import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
-// CREATE testimonial FORM.
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
+// CREATE TESTIMONIAL FORM.
 const Create = () => {
   const [isDisabled, setIsDisabled] = React.useState(false); // to disable submit button during image upload, false by default means button is enabled.
   const [imageId, setImageId] = React.useState(null); // to store uploaded image id.
@@ -22,7 +25,9 @@ const Create = () => {
   } = useForm();
 
   const navigate = useNavigate();
+  
 
+  // Form submission handler.
   const onSubmit = async (data) => {
     // data is a parameter and the value it receives is object of all form data.
     // console.log(data);.
@@ -31,25 +36,25 @@ const Create = () => {
     //  ...data means all data from form, imageId is uploaded image id that we are getting from handleFile function in below
     // newData is variable and the value it receives is object of all form data.
 
-    setIsDisabled(true); // ADDED THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
-    // --- API Call to Create testimonial ---.
-    const res = await fetch(`${apiUrl}/testimonials`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token()}`,
-      },
-      body: JSON.stringify(newData),
-    });
+    setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
+    
+    // --- API call to create testimonial ---
+    try {
+      const result = await request(`${apiUrl}/testimonials`, {
+        method: 'POST',
+        body: JSON.stringify(newData), // filled up form data is being sent as JSON string, backend will parse it and get the data in controller.
+      });
 
-    const result = await res.json();
-
-    if (result.status === true) {
-      toast.success(result.message); // message is coming from backend API response from testimonialController.php, store() method.
-      navigate('/admin/testimonials');
-    } else {
-      toast.error(result.message);
+      if (result.status === true) {
+        toast.success(result.message); // message is coming from backend API response from TestimonialController.php, store() method.
+        navigate('/admin/testimonials');
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error)); // default fallback error message
+    } finally {
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
@@ -60,36 +65,30 @@ const Create = () => {
 
     setImagePreview(URL.createObjectURL(file)); // Show image preview immediately after file selection.
 
+    setIsDisabled(true);
+
     const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
+
     formData.append('image', file);
 
-    setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
-
+    // --- API call to upload image ---
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
         setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from TempImageController.php, store() method.
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
-      setIsDisabled(false);
     } catch (error) {
-      setImagePreview(null);
-      toast.error('Image upload failed');
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      // Clean up: This runs if the 'try' finishes OR if the 'catch' runs, It ensures the user can always try again.
-      setIsDisabled(false);
+      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 

@@ -8,6 +8,9 @@ import { toast } from 'react-toastify';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 const Edit = () => {
   const params = useParams(); // get member id from URL
   const navigate = useNavigate();
@@ -30,27 +33,21 @@ const Edit = () => {
   // --- Fetch member data on component mount ---
   React.useEffect(() => {
     const fetchMember = async () => {
-      setLoading(true); // start loading while fetching
-      try {
-        const res = await fetch(`${apiUrl}/members/${params.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
+      setLoading(true); // start loading, show loading spinner
 
-        const result = await res.json();
+      // --- API call to fetch member by id ---
+      try {
+        const result = await request(`${apiUrl}/members/${params.id}`);
+
         if (result.status === false) {
           toast.error('Failed to fetch member');
-          setLoading(false);
+          setLoading(false); // stop loading
           return;
         }
 
-        setMember(result.data); // to store fetched testimonial data in state, data is coming from backend api memberController@show.
+        setMember(result.data); // Store fetched member data in state, data is coming from backend api admin/memberController@show.
 
-        // set form default values after fetching data
+        // set default filled values after fetching data
         reset({
           name: result.data.name,
           designation: result.data.designation,
@@ -58,14 +55,14 @@ const Edit = () => {
           status: result.data.status,
         });
       } catch (error) {
-        toast.error('Failed to fetch member');
+        toast.error(getErrorMessage(error, 'Failed to fetch member'));
       } finally {
-        setLoading(false); // stop loading
+        setLoading(false); // stop loading, hide loading spinner
       }
     };
 
     fetchMember();
-  }, [params.id, reset]);
+  }, [params.id, reset]); //// params.id is member id from URL and reset is used to reset form default values
 
   // --- Form submit handler ---
   const onSubmit = async (data) => {
@@ -76,29 +73,24 @@ const Edit = () => {
     const newData = { ...data, imageId: imageId };
     // newData is variable and the value it receives is object of all form data + imageId which is id of newly uploaded image, this newData will be sent to backend API for updating member, in memberController.php, update() method.
 
+    // --- API call to edit member ---
     try {
-      const res = await fetch(`${apiUrl}/members/${params.id}`, {
+      const result = await request(`${apiUrl}/members/${params.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
         body: JSON.stringify(newData),
       });
 
-      const result = await res.json();
-
       if (result.status === true) {
-        toast.success(result.message); // message coming from backend API response memberController.php, update() method
-        navigate('/admin/members');
+        toast.success(result.message); // message is coming from backend API response from admin/ServiceController.php, update() method.
+
+        navigate('/admin/members'); // navigate back to members list after successful update
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error('Update failed');
+      toast.error(getErrorMessage(error, 'Update failed'));
     } finally {
-      setIsDisabled(false); // re-enable button
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
@@ -116,28 +108,22 @@ const Edit = () => {
     formData.append('image', file);
 
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
-        setImagePreview(null); // clear preview if upload fails
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
+        setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // store uploaded image id for submission
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
     } catch (error) {
-      toast.error('Image upload failed');
-      setImagePreview(null);
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      setIsDisabled(false); // ensure user can try again
+      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 

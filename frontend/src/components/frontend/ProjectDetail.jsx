@@ -7,56 +7,64 @@ import { useParams, NavLink, useLocation } from 'react-router-dom';
 import Testimonials from '../common/LatestTestimonials';
 import ProjectBanner from '../../assets/images/construction2.jpg';
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no project is found.
+import useFetch from '../../hooks/useFetch';   // 
 
 const ProjectDetail = () => {
   const params = useParams(); // To get the project id from the url. This id is used to fetch the project details from the backend.
-  const location = useLocation(); // To check if user came from external page or from sidebar within project detail page.
+  const location = useLocation(); // Determine navigation source via location.state.from  (external: Home Page/Latest Projects section, Projects page or global footer except ProjectDetail page; internal sidebar/footer of ProjectDetail page)
 
-  const [project, setProject] = React.useState(null);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
   const [projects, setProjects] = React.useState([]);
-  const sectionRef = React.useRef(null); // To scroll to top when user clicks on Read More Button of ProjectCard.
-
+  const sectionRef = React.useRef(null); // Reference to section element; used to scroll into view when navigation from external page or internal page.
+  
   // Api call to fetch all projects
   const fetchProjects = async () => {
-    const res = await fetch(`${apiUrl}/get-projects/`, {
-      method: 'GET',
-    });
-    const result = await res.json();
-    setProjects(result.data); // Changed: set the array to 'projects'
-  };
-
-  // Api call to fetch single project
-  const fetchProject = async () => {
-    setLoading(true); // start loading
     try {
-      const res = await fetch(`${apiUrl}/get-project/${params.id}`);
+      const res = await fetch(`${apiUrl}/get-projects/`);
+
+      if (!res.ok) {
+        throw new Error('SERVER_ERROR');
+      }
+
+      // Converts JSON (string) response body into JavaScript object.
+      // Throws if response is not valid JSON (caught in catch, but not as 'INVALID_RESPONSE' unless rethrown)
       const result = await res.json();
-      setProject(result.data);
+
+      if (!result || !Array.isArray(result.data)) {
+        // data is coming from backend api response from frontend/ProjectController index() function.
+        throw new Error('INVALID_RESPONSE');
+      }
+
+      setProjects(result.data);
     } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // stop loading
+      console.error('Fetch projects error:', error);
+      setProjects([]); // safe fallback in case of error to avoid infinite loading skeleton bug in sidebar and to show empty state in sidebar instead of loading skeleton.
     }
   };
 
-React.useEffect(() => {
+  // use hook to manage all state and fetch project details.
+  const {
+    data: project,
+    loading,
+    error,
+  } = useFetch(`${apiUrl}/get-project/${params.id}`, false); // use false to fetch single service instead of array(list) of services.
+
+  React.useEffect(() => {
     if (location.state?.from === 'external') {
-      window.scrollTo(0, 0); // If user came from external page like Home page (LatestProjects) or Projects page then scroll to top, because they might be in middle of the page when they click on a project. But if they are clicking on project from sidebar of ProjectDetail page, we don't scroll to top because they are already on the project detail page.
+      window.scrollTo(0, 0); // If user came from external page like Home page or Projects page then scroll to top, because they might be in middle or end of the page when they click on a particluar project. But if they are clicking on project from sidebar of ProjectDetail page, we don't scroll to top because they are already on the project detail page.
     } else if (location.state?.from === 'footer') {
-      sectionRef.current?.scrollIntoView(); // takes to class 'section-9'
+      sectionRef.current?.scrollIntoView(); // Scroll the page until this section is visible, <section className="section-9 pt-4 pt-sm-5 pb-4" ref={sectionRef}>
     } else if (location.state?.from === 'sidebar') {
-      sectionRef.current?.scrollIntoView(); // takes to class 'section-9'
+      sectionRef.current?.scrollIntoView();
     }
 
-    fetchProject();
     fetchProjects();
   }, [params.id]); // // Added params.id as a dependency to refetch when the id changes, means when user clicks on another project from sidebar, it will fetch that project details.
 
   return (
     <>
       <Header />
-      <main style ={{ marginTop: '80px' }}>
+      <main style={{ marginTop: '80px' }}>
         <Banner
           heading={
             'Projects That Define Us and Reflect <br /> Our Commitment to Excellence'
@@ -130,7 +138,7 @@ React.useEffect(() => {
               {/* Main Content */}
               <div className="col-md-9 ps-md-4">
                 <div className="position-relative">
-                  {/* Loader centered, only show content when not loading and service exists */}
+                  {/* Loader centered, only show content when not loading and project exists */}
 
                   {loading && (
                     <div
@@ -161,14 +169,16 @@ React.useEffect(() => {
                     </>
                   )}
 
-                  {/* No Data, only show empty state when not loading and no servies exist */}
+                  {/* No Data, only show empty state when not loading and no projects exist */}
                   {!loading && !project && (
-                    <div
-                      className="d-flex justify-content-center align-items-center"
-                      style={{ minHeight: '400px' }}
-                    >
-                      No Data Found
-                    </div>
+                    <EmptyState>
+                      <h5>
+                        {error ? 'Error loading project' : 'No data found'}
+                      </h5>
+                      <p className="text-muted mb-0">
+                        {error || 'We couldn’t find this project.'}
+                      </p>
+                    </EmptyState>
                   )}
                 </div>
               </div>

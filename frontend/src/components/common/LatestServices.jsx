@@ -2,29 +2,19 @@ import React from 'react';
 import { apiUrl } from './http';
 import ServiceCard from './ServiceCard';
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no services are found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
+import { Link } from 'react-router';
 
 // SHOW LATEST SERVICES ON HOME PAGE.
 const LatestServices = () => {
-  const [services, setServices] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);  // To show loading skeleton while fetching data from api.
-
-  // Api call to fetch latest 4 services.
-  const fetchLatestServices = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-latest-services?limit=4`);
-      // not writting method: 'GET' because by default, the fetch() API uses GET method if you don’t specify anything.
-      const result = await res.json();
-      setServices(result.data); // data is coming from backend api response latestServices function of ServicesController.
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  React.useEffect(() => {
-    fetchLatestServices();
-  }, []);
+  // use hook to manage all state and fetch latest services.
+  const {
+    data: services,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-latest-services?limit=4`);
 
   return (
     <>
@@ -57,7 +47,29 @@ const LatestServices = () => {
 
           {/* Empty State, only show empty state when not loading and no services exist */}
           {!loading && services.length === 0 && (
-            <p className="text-center pt-5">No services found</p>
+            <EmptyState>
+              <h5>{error ? 'Error loading services' : 'No services found'}</h5>
+              <p className="text-muted mb-0">
+                {error || 'We couldn’t find any services at the moment.'}
+              </p>
+
+              {error === 'Unexpected data received.' ? (
+                <Link
+                  to="/contact"
+                  className= "text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                >
+                  Contact Support
+                </Link>
+              ) : (
+                <span
+                  role="button"
+                  onClick={refetch}
+                  className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                >
+                  {error ? 'Retry' : 'Refresh'}
+                </span>
+              )}
+            </EmptyState>
           )}
         </div>
       </section>

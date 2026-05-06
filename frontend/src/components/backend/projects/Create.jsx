@@ -10,7 +10,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import JoditEditor from 'jodit-react'; // WYSIWYG editor.
 import { Spinner } from 'react-bootstrap';
 
-// CREATE SERVICE FORM.
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
+// CREATE PROJECT FORM.
 const Create = ({ placeholder = 'content' }) => {
   // The placeholder prop is used to customize the text hint displayed in the Jodit Editor.
   const editor = React.useRef(null); // ref for wising editor.
@@ -39,29 +42,27 @@ const Create = ({ placeholder = 'content' }) => {
     //// data is a parameter and the value it receives is object of all form data.
     // console.log(data);.
 
-    setIsDisabled(true); // ADDED THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
+    setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
     const newData = { ...data, content: content, imageId: imageId };
     //  ...data means all data from form, content is wising editor data, imageId is uploaded image id that we are getting from handleFile function in below
     // newData is variable and the value it receives is object of all form data + content from wysiwyg editor.
 
-    // --- API Call to Create Project ---.
-    const res = await fetch(`${apiUrl}/projects`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token()}`,
-      },
-      body: JSON.stringify(newData),
-    });
+    try {
+      const result = await request(`${apiUrl}/projects`, {
+        method: 'POST',
+        body: JSON.stringify(newData), // filled up form data is being sent as JSON string, backend will parse it and get the data in controller.
+      });
 
-    const result = await res.json();
-
-    if (result.status === true) {
-      toast.success(result.message); // message is coming from backend API response from ProjectController.php, store() method.
-      navigate('/admin/projects');
-    } else {
-      toast.error(result.message);
+      if (result.status === true) {
+        toast.success(result.message); // message is coming from backend API response from ProjectController.php, store() method.
+        navigate('/admin/projects');
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error)); // default fallback error message
+    } finally {
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
@@ -72,36 +73,30 @@ const Create = ({ placeholder = 'content' }) => {
 
     setImagePreview(URL.createObjectURL(file)); // Show image preview immediately after file selection.
 
-    const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
-    formData.append('image', file);
-
     setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
 
+    const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
+
+    formData.append('image', file); // image here is key and file is value
+
+    // --- API call to upload image ---
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
         setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from TempImageController.php, store() method.
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
-      setIsDisabled(false);
     } catch (error) {
-      setImagePreview(null);
-      toast.error('Image upload failed');
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      // Clean up: This runs if the 'try' finishes OR if the 'catch' runs, It ensures the user can always try again.
-      setIsDisabled(false);
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 

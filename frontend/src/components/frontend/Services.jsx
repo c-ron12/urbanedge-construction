@@ -6,30 +6,18 @@ import ServiceCard from '../common/ServiceCard'; // Reusable card component for 
 import BannerImg from '../../assets/images/banner2.jpg';
 import { apiUrl } from '../common/http';
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no services are found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 // SHOW ALL SERVICES ON SERVICES PAGE
 const Services = () => {
-  // State to store all services fetched from backend
-  const [services, setServices] = React.useState([]);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-
-  // Api call to fetch all services
-  const fetchAllServices = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-services`);
-      const result = await res.json();
-      setServices(result.data); // data is coming from backend API response from ServiceController, index()
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  // Fetch all services when component mounts
-  React.useEffect(() => {
-    fetchAllServices();
-  }, []);
+  // use hook to manage all state and fetch all services.
+  const {
+    data: services,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-services`);
 
   return (
     <>
@@ -75,14 +63,31 @@ const Services = () => {
 
             {/* only show empty state when not loading and no services exist */}
             {!loading && services.length === 0 && (
-              <div className="text-center py-5">
-                <div className="empty-state">
-                  <h5 className="mb-2">No Services Found</h5>
-                  <p className="text-muted mb-0">
-                    We couldn’t find any services at the moment.
-                  </p>
-                </div>
-              </div>
+              <EmptyState>
+                <h5>
+                  {error ? 'Error loading services' : 'No services found'}
+                </h5>
+                <p className="text-muted mb-0">
+                  {error || 'We couldn’t find any services at the moment.'}
+                </p>
+
+                {error === 'Unexpected data received.' ? (
+                  <Link
+                    to="/contact"
+                    className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                  >
+                    Contact Support
+                  </Link>
+                ) : (
+                  <span
+                    role="button"
+                    onClick={refetch}
+                    className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                  >
+                    {error ? 'Retry' : 'Refresh'}
+                  </span>
+                )}
+              </EmptyState>
             )}
           </div>
         </section>

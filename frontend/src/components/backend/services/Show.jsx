@@ -7,54 +7,87 @@ import { Link } from 'react-router-dom'; // using link instead of anchor tag to 
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 // SHOW ALL SERVICES IN TABLE.
 const Show = () => {
   const [services, setServices] = React.useState([]); // state to store services list, used in table below and in delete function.
-  const [loading, setLoading] = React.useState(true); // true means data is being fetched
+  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api. true means data is being fetched, false means data has been fetched and we can show the services or empty state.
+  const [error, setError] = React.useState(null); // To store error message if api call fails, used in empty state below.
 
   const fetchServices = async () => {
-    setLoading(true);
-    const res = await fetch(`${apiUrl}/services`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token()}`,
-      },
-    });
+    setLoading(true); // start loading, show loading spinner.
+    setError(null); // clear previous errors (if any) before new fetch attempt, (important when retrying API). Without this, old error messages could still show
 
-    const result = await res.json();
-    console.log(result);
-    // setServices(result);.
-    setServices(result.data || []); // <-- use result.data (array).. data is coming from backend API response ServiceController@index.
-    setLoading(false); // stop loading
+    // API call to fetch services
+    try {
+      const result = await request(`${apiUrl}/services`);
+
+      if (result.status === false) {
+        setError(result.message || 'Failed to load services');
+        setServices([]); // safe fallback in case of error to avoid infinite loading skeleton bug.
+        setLoading(false); // stop loading, hide loading spinner and show empty state or error message.
+        return;
+      }
+
+      setServices(result.data || []); // <-- use result.data (array).. data is coming from backend API response admin/ServiceController@index.
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load services'));
+      setServices([]); // safe fallback in case of error to avoid infinite loading skeleton bug.
+    } finally {
+      setLoading(false); // stop loading, hide loading spinner and show services or empty state or error message.
+    }
   };
 
   const deleteService = async (id) => {
     // function to delete service by id.
 
     if (confirm('Are you sure you want to delete this service?')) {
-      const res = await fetch(`${apiUrl}/services/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-      });
-      const result = await res.json();
+      try {
+        const res = await fetch(`${apiUrl}/services/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token()}`,
+          },
+        });
 
-      if (result.status === true) {
-        //  It filters the current 'services' array stored in component state).
-        // It keeps every service whose 'id' does NOT match the 'id' of the service that was just deleted.
-        const filteredServices = services.filter(
-          (service) => service.id !== id
-        ); // remove deleted service from state.
+        // Handle HTTP errors
+        if (!res.ok) {
+          throw new Error('SERVER_ERROR');
+        }
 
-        setServices(filteredServices);
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
+        const result = await res.json();
+
+        // Safety check
+        if (!result || typeof result.status === 'undefined') {
+          throw new Error('INVALID_RESPONSE');
+        }
+
+        if (result.status === true) {
+          //  It filters the current 'services' array stored in component state).
+          // It keeps every service whose 'id' does NOT match the 'id' of the service that was just deleted.
+          const filteredservices = services.filter(
+            (service) => service.id !== id
+          ); // remove deleted service from state.
+
+          setServices(filteredservices);
+          toast.success(result.message);
+        } else {
+          toast.error(result.message || 'Delete failed');
+        }
+      } catch (error) {
+        console.error('Delete service error:', error);
+
+        if (error.message === 'Failed to fetch') {
+          toast.error('Network error. Please check your internet connection.');
+        } else if (error.message === 'SERVER_ERROR') {
+          toast.error('Server error. Please try again later.');
+        } else {
+          toast.error('Failed to delete service');
+        }
       }
     }
   };
@@ -86,11 +119,15 @@ const Show = () => {
                     </Link>
                   </div>
 
-                  {loading ? (
-                    <div className="text-center my-5">
+                  {/* Loading State */}
+                  {loading && (
+                    <div className="text-center my-5 py-5">
                       <Spinner animation="border" variant="primary" />
                     </div>
-                  ) : (
+                  )}
+
+                  {/* Table */}
+                  {!loading && (
                     <div className="table-responsive">
                       <table className="table align-middle">
                         <thead className="table-light border-bottom">
@@ -102,25 +139,64 @@ const Show = () => {
                             <th className="py-3">Actions</th>
                           </tr>
                         </thead>
+
                         <tbody>
-                          {services &&
+                          {error ? (
+                            <tr>
+                              <td
+                                colSpan="5"
+                                className="text-center align-middle py-5"
+                              >
+                                <div className="text-danger">{error}</div>
+
+                                <span
+                                  role="button"
+                                  onClick={fetchServices}
+                                  className="text-primary fw-bold d-inline-block mt-2 text-decoration-underline"
+                                >
+                                  Retry
+                                </span>
+                              </td>
+                            </tr>
+                          ) : services.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan="5"
+                                className="text-center align-middle py-5"
+                              >
+                                <div className="text-black">
+                                  <p className="m-0">No services found</p>
+                                </div>
+
+                                <span
+                                  role="button"
+                                  onClick={fetchServices}
+                                  className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                                >
+                                  Refresh
+                                </span>
+                              </td>
+                            </tr>
+                          ) : (
                             services.map((service) => (
                               <tr key={service.id}>
                                 <td>{service.id}</td>
+
                                 <td style={{ maxWidth: '250px' }}>
                                   <div
                                     className="text-truncate"
-                                    title={service?.title}
+                                    title={service.title}
                                   >
-                                    {service?.title}
+                                    {service.title}
                                   </div>
                                 </td>
-                                 <td style={{ maxWidth: '250px' }}>
+
+                                <td style={{ maxWidth: '250px' }}>
                                   <div
                                     className="text-truncate"
-                                    title={service?.slug}
+                                    title={service.slug}
                                   >
-                                    {service?.slug}
+                                    {service.slug}
                                   </div>
                                 </td>
 
@@ -135,6 +211,7 @@ const Show = () => {
                                   >
                                     Edit
                                   </Link>
+
                                   <button
                                     onClick={() => deleteService(service.id)}
                                     type="button"
@@ -144,7 +221,8 @@ const Show = () => {
                                   </button>
                                 </td>
                               </tr>
-                            ))}
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -155,6 +233,7 @@ const Show = () => {
           </div>
         </div>
       </main>
+
       <Footer />
     </>
   );

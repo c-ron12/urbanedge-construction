@@ -9,6 +9,9 @@ import { toast } from 'react-toastify';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 const Edit = () => {
   const params = useParams(); // get testimonial id from URL
   const navigate = useNavigate();
@@ -16,7 +19,7 @@ const Edit = () => {
   // --- State ---
   const [loading, setLoading] = React.useState(true); // true while fetching testimonial data
   const [isDisabled, setIsDisabled] = React.useState(false); // true while submitting/updating or uploading image
-  const [testimonial, settestimonial] = React.useState(''); // store fetched testimonial
+  const [testimonial, setTestimonial] = React.useState(''); // store fetched testimonial
   const [imagePreview, setImagePreview] = React.useState(null); // store uploaded image preview
   const [imageId, setImageId] = React.useState(null); // store uploaded image id
 
@@ -31,27 +34,21 @@ const Edit = () => {
   // --- Fetch testimonial data on component mount ---
   React.useEffect(() => {
     const fetchTestimonial = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${apiUrl}/testimonials/${params.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
+      setLoading(true); // start loading, show loading spinner
 
-        const result = await res.json();
+      // --- API call to fetch testimonial by id ---
+      try {
+        const result = await request(`${apiUrl}/testimonials/${params.id}`);
+
         if (result.status === false) {
           toast.error('Failed to fetch testimonial');
-          setLoading(false);
+          setLoading(false); // stop loading
           return;
         }
 
-        settestimonial(result.data); // to store fetched testimonial data in state, data is coming from backend api testimonialController@show.
+        setTestimonial(result.data); // Store fetched testimonial data in state, data is coming from backend api admin/testimonialController@show.
 
-        // set form default values after fetching data
+        // set default filled values after fetching data
         reset({
           testimonial: result.data.testimonial,
           citation: result.data.citation,
@@ -59,46 +56,42 @@ const Edit = () => {
           status: result.data.status,
         });
       } catch (error) {
-        toast.error('Failed to fetch testimonial');
+        toast.error(getErrorMessage(error, 'Failed to fetch testimonial'));
       } finally {
-        setLoading(false);
+        setLoading(false); // stop loading, hide loading spinner
       }
     };
 
     fetchTestimonial();
-  }, [params.id, reset]);
+  }, [params.id, reset]); //// params.id is testimonial id from URL and reset is used to reset form default values
 
   // --- Form submit handler ---
   const onSubmit = async (data) => {
     // data is a parameter and the value it receives is object of all form data.
 
-    setIsDisabled(true); // ADDED THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
+    setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
 
     const newData = { ...data, imageId: imageId };
     // newData is variable and the value it receives is object of all form data + imageId which is id of newly uploaded image, this newData will be sent to backend API for updating testimonial, in testimonialController.php, update() method.
+
+    // --- API call to edit service ---
     try {
-      const res = await fetch(`${apiUrl}/testimonials/${params.id}`, {
+      const result = await request(`${apiUrl}/testimonials/${params.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
         body: JSON.stringify(newData),
       });
 
-      const result = await res.json();
-
       if (result.status === true) {
-        toast.success(result.message); // message is coming from backend API response from testimonialController.php, update() method.
+        toast.success(result.message); // message is coming from backend API response from admin/ServiceController.php, update() method.
+
         navigate('/admin/testimonials');
       } else {
-        toast.error(result.message); 
+        toast.error(result.message);
       }
     } catch (error) {
-      toast.error('Update failed');
+      toast.error(getErrorMessage(error, 'Update failed'));
     } finally {
-      setIsDisabled(false);
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
@@ -115,37 +108,31 @@ const Edit = () => {
 
     formData.append('image', file);
 
+    // --- API call to upload image ---
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
         setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from TempImageController.php, store() method.
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
     } catch (error) {
-      toast.error('Image upload failed');
-      setImagePreview(null);
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      setIsDisabled(false); // Clean up: This runs if the 'try' finishes OR if the 'catch' runs, It ensures the user can always try again.
+      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
   return (
     <>
-     
       <Header />
-      
+
       <main>
         <div className="container my-sm-5 my-4 pt-5 pb-4">
           <div className="row mt-5">

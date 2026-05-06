@@ -9,6 +9,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'; // using usePar
 import JoditEditor from 'jodit-react'; // WYSIWYG editor.
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 const Edit = ({ placeholder = 'content' }) => {
   // The placeholder prop is used to customize the text hint displayed in the Jodit Editor.
   const editor = React.useRef(null);
@@ -42,22 +45,21 @@ const Edit = ({ placeholder = 'content' }) => {
   // --- Fetch article data on component mount ---
   React.useEffect(() => {
     const fetchArticle = async () => {
-      setLoading(true);
+      setLoading(true); // start loading, show loading spinner
+
+      // --- API call to fetch article by id ---
       try {
-        const res = await fetch(`${apiUrl}/articles/${params.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
+        const result = await request(`${apiUrl}/articles/${params.id}`);
 
-        const result = await res.json();
+        if (result.status === false) {
+          toast.error('Failed to fetch article');
+          setLoading(false); // stop loading
+          return;
+        }
 
-        setContent(result.data.content); // to set content in wising editor from fetched data.
-        setArticles(result.data); // to store fetched article data in state, data is coming from backend api articleController@show.
+        setArticles(result.data); // Store fetched article data in state, data is coming from backend api admin/articleController@show.
 
+        // set default filled values after fetching data
         reset({
           title: result.data.title,
           slug: result.data.slug,
@@ -65,45 +67,41 @@ const Edit = ({ placeholder = 'content' }) => {
           status: result.data.status,
         });
       } catch (error) {
-        toast.error('Failed to fetch article');
+        toast.error(getErrorMessage(error, 'Failed to fetch article'));
       } finally {
-        setLoading(false);
+        setLoading(false); // stop loading, hide loading spinner
       }
     };
 
     fetchArticle();
-  }, [params.id, reset]);
+  }, [params.id, reset]); //// params.id is article id from URL and reset is used to reset form default values
 
+  // --- Form submit handler ---
   const onSubmit = async (data) => {
     // data is a parameter and the value it receives is object of all form data.
-    setIsDisabled(true); // ADDED THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
+    setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
 
     const newData = { ...data, content: content, imageId: imageId };
     // newData is variable and the value it receives is object of all form data + content from wysiwyg editor.
 
+    // --- API call to edit article ---
     try {
-      const res = await fetch(`${apiUrl}/articles/${params.id}`, {
+      const result = await request(`${apiUrl}/articles/${params.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
         body: JSON.stringify(newData),
       });
 
-      const result = await res.json();
-
       if (result.status === true) {
-        toast.success(result.message); // message is coming from backend API response from articleController.php, update() method.
+        toast.success(result.message); // message is coming from backend API response from admin/ServiceController.php, update() method.
+
         navigate('/admin/articles');
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error('Update failed');
+      toast.error(getErrorMessage(error, 'Update failed'));
     } finally {
-      setIsDisabled(false);
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
@@ -118,30 +116,24 @@ const Edit = ({ placeholder = 'content' }) => {
     formData.append('image', file);
     setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
 
+    // --- API call to upload image ---
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
         setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from TempImageController.php, store() method.
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
     } catch (error) {
-      setImagePreview(null);
-      toast.error('Image upload failed');
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      // Clean up: This runs if the 'try' finishes OR if the 'catch' runs, It ensures the user can always try again.
-      setIsDisabled(false);
+      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 

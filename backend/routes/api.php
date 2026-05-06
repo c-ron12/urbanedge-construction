@@ -30,7 +30,7 @@ Route ::get('get-project/{id}', [FrontendProjectController::class, 'project']); 
 
 Route::get('get-articles', [FrontendArticleController::class, 'index']);     // Public route to get all active articles for the frontend.
 Route::get('get-latest-articles', [FrontendArticleController::class, 'latestArticles']);     // Public route to get all active with limit articles list for the frontend.
-Route ::get('get-article/{id}', [FrontendArticleController::class, 'article']);     // Public route to get a specific details of an active article for the frontend.
+Route::get('get-article/{id}', [FrontendArticleController::class, 'article']);     // Public route to get a specific details of an active article for the frontend.
 
 Route::get('get-testimonials', [FrontendTestimonialController::class, 'index']);     // Public route to get all active testimonials for the frontend.
 Route::get('get-latest-testimonials', [FrontendTestimonialController::class, 'latestTestimonials']);     // Public route to get latest active with limit testimonials list for the frontend.

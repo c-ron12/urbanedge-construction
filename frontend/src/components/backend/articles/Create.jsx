@@ -10,6 +10,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import JoditEditor from 'jodit-react'; // WYSIWYG editor.
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 // CREATE article FORM.
 const Create = ({ placeholder = 'content' }) => {
   // The placeholder prop is used to customize the text hint displayed in the Jodit Editor.
@@ -45,23 +48,22 @@ const Create = ({ placeholder = 'content' }) => {
     // newData is variable and the value it receives is object of all form data + content from wysiwyg editor.
 
     // --- API Call to Create article ---.
-    const res = await fetch(`${apiUrl}/articles`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token()}`,
-      },
-      body: JSON.stringify(newData),
-    });
+    try {
+      const result = await request(`${apiUrl}/articles`, {
+        method: 'POST',
+        body: JSON.stringify(newData), // filled up form data is being sent as JSON string, backend will parse it and get the data in controller.
+      });
 
-    const result = await res.json();
-
-    if (result.status === true) {
-      toast.success(result.message); // message is coming from backend API response from ArticleController.php, store() method.
-      navigate('/admin/articles');
-    } else {
-      toast.error(result.message);
+      if (result.status === true) {
+        toast.success(result.message); // message is coming from backend API response from ServiceController.php, store() method.
+        navigate('/admin/articles');
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error)); // default fallback error message
+    } finally {
+      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 
@@ -77,31 +79,24 @@ const Create = ({ placeholder = 'content' }) => {
 
     setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
 
+    // --- API call to upload image ---
     try {
-      const res = await fetch(`${apiUrl}/temp-images`, {
+      const result = await request(`${apiUrl}/temp-images`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-        body: formData,
+        body: formData, //  important: pass FormData directly
       });
 
-      const result = await res.json();
-
       if (result.status === false) {
-        toast.error(result.errors.image[0]);
+        toast.error(result.errors?.image?.[0] || 'Image upload failed');
         setImagePreview(null); // Clear preview if upload fails.
       } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from TempImageController.php, store() method.
+        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
       }
-      setIsDisabled(false);
     } catch (error) {
-      setImagePreview(null);
-      toast.error('Image upload failed');
+      toast.error(getErrorMessage(error, 'Image upload failed'));
+      setImagePreview(null); // Clear preview if upload fails.
     } finally {
-      // Clean up: This runs if the 'try' finishes OR if the 'catch' runs, It ensures the user can always try again.
-      setIsDisabled(false);
+      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
   };
 

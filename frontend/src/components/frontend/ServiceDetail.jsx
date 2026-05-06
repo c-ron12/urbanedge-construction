@@ -7,49 +7,56 @@ import { apiUrl, fileUrl } from '../common/http';
 import Testimonials from '../common/LatestTestimonials';
 import SkeletonLoader from '../common/SkeletonLoader';
 import { useParams, NavLink, useLocation } from 'react-router-dom';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no service is found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 const ServiceDetail = () => {
-  const params = useParams();
-  const location = useLocation(); // To check if user came from external page or from sidebar within service detail page.
+  const params = useParams(); // To get the service id from the url. This id is used to fetch the service details from the backend.
+  const location = useLocation(); // Determine navigation source via location.state.from  (external: Home Page/Latest Services section, Service page or global footer except ServiceDetail page; internal sidebar/footer of ServiceDetail page)
 
-  const [service, setService] = React.useState(null);
   const [services, setServices] = React.useState([]);
+  const sectionRef = React.useRef(null); // Reference to section element; used to scroll into view when navigation from external page or internal page.
 
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-  const sectionRef = React.useRef(null); // To scroll to top when user clicks on Read More Button of ServiceCard.
-
+  // Api call to fetch all services for sidebar.
   const fetchServices = async () => {
-    const res = await fetch(`${apiUrl}/get-services/`, {
-      method: 'GET',
-    });
-    const result = await res.json();
-    setServices(result.data);
-  };
-
-  // Api call to fetch single service
-  const fetchService = async () => {
-    setLoading(true); // start loading
     try {
-      const res = await fetch(`${apiUrl}/get-service/${params.id}`);
+      const res = await fetch(`${apiUrl}/get-services/`);
+
+      if (!res.ok) {
+        throw new Error('SERVER_ERROR');
+      }
+
+      // Converts JSON (string) response body into JavaScript object.
+      // Throws if response is not valid JSON (caught in catch, but not as 'INVALID_RESPONSE' unless rethrown)
       const result = await res.json();
-      setService(result.data);
+
+      if (!result || !Array.isArray(result.data)) {
+        throw new Error('INVALID_RESPONSE');
+      }
+
+      setServices(result.data);
     } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // stop loading
+      console.error('Fetch services error:', error);
+      setServices([]); // safe fallback in case of error to avoid infinite loading skeleton bug in sidebar and to show empty state in sidebar instead of loading skeleton.
     }
   };
+
+  // use hook to manage all state and fetch service details.
+  const {
+    data: service,
+    loading,
+    error,
+  } = useFetch(`${apiUrl}/get-service/${params.id}`, false); // use false to fetch single service instead of array(list) of services.
 
   React.useEffect(() => {
     if (location.state?.from === 'external') {
-      window.scrollTo(0, 0); // If user came from external page like Home page (LatestServices) or Service page then scroll to top, because they might be in middle of the page when they click on a service. But if they are clicking on service from sidebar of ServiceDetail page, we don't scroll to top because they are already on the service detail page.
+      window.scrollTo(0, 0); // If user came from external page like Home page or Service page then scroll to top, because they might be in middle or end of the page when they click on a particluar service . But if they are clicking on service from sidebar of ServiceDetail page, we don't scroll to top because they are already on the service detail page.
     } else if (location.state?.from === 'footer') {
-      sectionRef.current?.scrollIntoView(); // takes to class 'section-9'
+      sectionRef.current?.scrollIntoView(); // Scroll the page until this section is visible, <section className="section-9 pt-4 pt-sm-5 pb-2 pb-sm-4" ref={sectionRef}>
     } else if (location.state?.from === 'sidebar') {
-      sectionRef.current?.scrollIntoView(); // takes to class 'section-9'
+      sectionRef.current?.scrollIntoView();
     }
 
-    fetchService();
     fetchServices();
   }, [params.id]); // Added params.id as a dependency to refetch when the id changes, means when user clicks on another service from sidebar, it will fetch that service details.
 
@@ -57,7 +64,7 @@ const ServiceDetail = () => {
     <>
       <Header />
 
-      <main style ={{ marginTop: '80px' }}>
+      <main style={{ marginTop: '80px' }}>
         <Banner
           heading={'Shaping Tomorrows <br /> Structures Today'}
           title={service?.title || ''}
@@ -113,12 +120,12 @@ const ServiceDetail = () => {
                       {service.image && (
                         <img
                           src={`${fileUrl}/uploads/services/large/${service.image}`}
-                          alt={service.title}
+                          alt={service?.title}
                           className="mb-4 w-100 shadow border-0"
                         />
                       )}
 
-                      <h3 className="my-2">{service.title}</h3>
+                      <h3 className="my-2">{service?.title}</h3>
 
                       <div
                         className="content-description"
@@ -129,12 +136,14 @@ const ServiceDetail = () => {
 
                   {/*  No Data, only show empty state when not loading and no servies exist */}
                   {!loading && !service && (
-                    <div
-                      className="d-flex justify-content-center align-items-center"
-                      style={{ minHeight: '400px' }}
-                    >
-                      No Data Found
-                    </div>
+                    <EmptyState>
+                      <h5>
+                        {error ? 'Error loading service' : 'No data found'}
+                      </h5>
+                      <p className="text-muted mb-0">
+                        {error || 'We couldn’t find this service.'}
+                      </p>
+                    </EmptyState>
                   )}
                 </div>
               </div>

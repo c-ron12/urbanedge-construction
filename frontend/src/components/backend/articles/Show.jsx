@@ -7,52 +7,86 @@ import { Link } from 'react-router-dom'; // using link instead of anchor tag to 
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
 
+import { request } from '../../common/httpClient';
+import { getErrorMessage } from '../../common/apiErrorHandler';
+
 // SHOW ALL ARTICLES IN TABLE
 const Show = () => {
   const [articles, setArticles] = React.useState([]); // state to store articles list, used in table below and in delete function
-  const [loading, setLoading] = React.useState(true); // true means data is being fetched
+  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api. true means data is being fetched, false means data has been fetched and we can show the articles or empty state.
+  const [error, setError] = React.useState(null); // To store error message if api call fails, used in empty state below.
 
   const fetchArticles = async () => {
     setLoading(true); // start loading
-    const res = await fetch(`${apiUrl}/articles`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token()}`,
-      },
-    });
 
-    const result = await res.json();
-    setArticles(result.data || []); // <-- use result.data (array).. data is coming from backend API response articleController@index
-    setLoading(false); // stop loading
+    // API call to fetch articles
+    try {
+      const result = await request(`${apiUrl}/articles`);
+
+      if (result.status === false) {
+        setError(result.message || 'Failed to load articles');
+        setArticles([]); // safe fallback in case of error to avoid infinite loading skeleton bug.
+        setLoading(false); // stop loading, hide loading spinner and show empty state or error message.
+        return;
+      }
+
+      setArticles(result.data || []); // <-- use result.data (array).. data is coming from backend API response admin/ServiceController@index.
+    } catch (error) {
+      setError(getErrorMessage(error, 'Failed to load articles'));
+      setArticles([]); // safe fallback in case of error to avoid infinite loading skeleton bug.
+    } finally {
+      setLoading(false); // stop loading, hide loading spinner and show articles or empty state or error message.
+    }
   };
 
   const deleteArticle = async (id) => {
     // function to delete article by id
 
     if (confirm('Are you sure you want to delete this article?')) {
-      const res = await fetch(`${apiUrl}/articles/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token()}`,
-        },
-      });
-      const result = await res.json();
+      try {
+        const res = await fetch(`${apiUrl}/articles/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token()}`,
+          },
+        });
 
-      if (result.status === true) {
-        //  It filters the current 'articles' array stored in component state).
-        // It keeps every article whose 'id' does NOT match the 'id' of the article that was just deleted.
-        const filteredArticles = articles.filter(
-          (article) => article.id !== id
-        ); // remove deleted article from state
+        // Handle HTTP errors
+        if (!res.ok) {
+          throw new Error('SERVER_ERROR');
+        }
 
-        setArticles(filteredArticles);
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
+        const result = await res.json();
+
+        // Safety check
+        if (!result || typeof result.status === 'undefined') {
+          throw new Error('INVALID_RESPONSE');
+        }
+
+        if (result.status === true) {
+          //  It filters the current 'articles' array stored in component state).
+          // It keeps every article whose 'id' does NOT match the 'id' of the article that was just deleted.
+          const filteredArticles = articles.filter(
+            (article) => article.id !== id
+          ); // remove deleted article from state
+
+          setArticles(filteredArticles);
+          toast.success(result.message);
+        } else {
+          toast.error(result.message || 'Delete failed');
+        }
+      } catch (error) {
+        console.error('Delete article error:', error);
+
+        if (error.message === 'Failed to fetch') {
+          toast.error('Network error. Please check your internet connection.');
+        } else if (error.message === 'SERVER_ERROR') {
+          toast.error('Server error. Please try again later.');
+        } else {
+          toast.error('Failed to delete article');
+        }
       }
     }
   };
@@ -83,12 +117,15 @@ const Show = () => {
                       Create
                     </Link>
                   </div>
-
-                  {loading ? (
-                    <div className="text-center my-5">
+                  {/* Loading State */}
+                  {loading && (
+                    <div className="text-center my-5 py-5">
                       <Spinner animation="border" variant="primary" />
                     </div>
-                  ) : (
+                  )}
+
+                  {/* Table */}
+                  {!loading && (
                     <div className="table-responsive">
                       <table className="table align-middle">
                         <thead className="table-light border-bottom">
@@ -99,8 +136,45 @@ const Show = () => {
                             <th className="py-3">Actions</th>
                           </tr>
                         </thead>
+
                         <tbody>
-                          {articles &&
+                          {error ? (
+                            <tr>
+                              <td
+                                colSpan="5"
+                                className="text-center align-middle py-5"
+                              >
+                                <div className="text-danger">{error}</div>
+
+                                <span
+                                  role="button"
+                                  onClick={fetchArticles}
+                                  className="text-primary fw-bold d-inline-block mt-2 text-decoration-underline"
+                                >
+                                  Retry
+                                </span>
+                              </td>
+                            </tr>
+                          ) : articles.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan="5"
+                                className="text-center align-middle py-5"
+                              >
+                                <div className="text-black">
+                                  <p className="m-0">No articles found</p>
+                                </div>
+
+                                <span
+                                  role="button"
+                                  onClick={fetchArticles}
+                                  className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                                >
+                                  Refresh
+                                </span>
+                              </td>
+                            </tr>
+                          ) : (
                             articles.map((article) => (
                               <tr key={article.id}>
                                 <td>{article.id}</td>
@@ -135,7 +209,8 @@ const Show = () => {
                                   </div>
                                 </td>
                               </tr>
-                            ))}
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>

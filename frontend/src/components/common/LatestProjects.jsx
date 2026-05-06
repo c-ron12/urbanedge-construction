@@ -2,30 +2,18 @@ import React from 'react';
 import { apiUrl } from './http';
 import ProjectCard from './ProjectCard';
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no projects are found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 // SHOW LATEST PROJECTS ON HOME PAGE.
 const LatestProjects = () => {
-  const [projects, setProjects] = React.useState([]);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-
-  // Api call to fetch latest 4 projects.
-  const fetchLatestProjects = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-latest-projects?limit=4`);
-
-      // not writting method: 'GET' because by default, the fetch() API uses GET method if you don’t specify anything.
-      const result = await res.json();
-      setProjects(result.data); // data is coming from backend api response latestProjects function of ProjectsController.
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  React.useEffect(() => {
-    fetchLatestProjects();
-  }, []);
+  // use hook to manage all state and fetch latest projects.
+  const {
+    data: projects,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-latest-projects?limit=4`);
 
   return (
     <>
@@ -58,7 +46,29 @@ const LatestProjects = () => {
 
           {/* only show empty state when not loading and no projects exist */}
           {!loading && projects.length === 0 && (
-            <p className="text-center pt-5">No projects found</p>
+            <EmptyState>
+              <h5>{error ? 'Error loading projects' : 'No projects found'}</h5>
+              <p className="text-muted mb-0">
+                {error || 'We couldn’t find any projects at the moment.'}
+              </p>
+
+              {error === 'Unexpected data received.' ? (
+                <Link
+                  to="/contact"
+                  className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                >
+                  Contact Support
+                </Link>
+              ) : (
+                <span
+                  role="button"
+                  onClick={refetch}
+                  className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                >
+                  {error ? 'Retry' : 'Refresh'}
+                </span>
+              )}
+            </EmptyState>
           )}
         </div>
       </section>

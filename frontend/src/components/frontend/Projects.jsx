@@ -7,28 +7,18 @@ import SkeletonLoader from '../common/SkeletonLoader';
 
 import ProjectCard from '../common/ProjectCard';
 import { apiUrl } from '../common/http';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no projects are found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 // SHOW ALL PROJECTS ON PROJECTS PAGE.
 const Projects = () => {
-  const [projects, setProjects] = React.useState([]);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-
-  // Api call to fetch all projects
-  const fetchAllProjects = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-projects`);
-      const result = await res.json();
-      setProjects(result.data); // data is coming from backend API response from ProjectController, index()
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  React.useEffect(() => {
-    fetchAllProjects();
-  }, []);
+  // use hook to manage all state and fetch all projects.
+  const {
+    data: projects,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-projects`);
 
   return (
     <>
@@ -74,14 +64,31 @@ const Projects = () => {
 
             {/* only show empty state when not loading and no projects exist */}
             {!loading && projects.length === 0 && (
-              <div className="text-center py-5">
-                <div className="empty-state">
-                  <h5 className="mb-2">No Projects Found</h5>
-                  <p className="text-muted mb-0">
-                    We couldn’t find any projects at the moment.
-                  </p>
-                </div>
-              </div>
+              <EmptyState>
+                <h5>
+                  {error ? 'Error loading projects' : 'No projects found'}
+                </h5>
+                <p className="text-muted mb-0">
+                  {error || 'We couldn’t find any projects at the moment.'}
+                </p>
+
+                {error === 'Unexpected data received.' ? (
+                  <Link
+                    to="/contact"
+                    className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                  >
+                    Contact Support
+                  </Link>
+                ) : (
+                  <span
+                    role="button"
+                    onClick={refetch}
+                    className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                  >
+                    {error ? 'Retry' : 'Refresh'}
+                  </span>
+                )}
+              </EmptyState>
             )}
           </div>
         </section>

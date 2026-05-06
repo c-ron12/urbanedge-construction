@@ -29,11 +29,11 @@ const Home = () => {
                   With years of experience and a dedication to quality.
                 </p>
                 <div className="mt-5 banner-btns">
-                  <Link className="btn btn-primary large-btn" to="/contact">
+                  <Link className="btn  large-btn banner-btn1" to="/contact">
                     Contact Now
                   </Link>
                   <Link
-                    className="btn btn-primary ms-3 large-btn"
+                    className="btn ms-3 large-btn banner-btn2"
                     to="/projects"
                   >
                     View Projects

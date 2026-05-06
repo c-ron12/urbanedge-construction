@@ -6,28 +6,18 @@ import BlogBanner from '../../assets/images/construction9.jpg';
 import { apiUrl } from '../common/http';
 import ArticleCard from '../common/ArticleCard'; // Reusable card component for each service
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no service is found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 // SHOW ALL ARTICLES ON BLOGS PAGE.
 const Blogs = () => {
-  const [articles, setArticles] = React.useState([]);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-
-  // Api call to fetch all articles
-  const fetchAllArticles = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-articles`);
-      const result = await res.json();
-      setArticles(result.data); // data is coming from backend API response from ArticleController, index()
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  React.useEffect(() => {
-    fetchAllArticles();
-  }, []);
+  // use hook to manage all state and fetch all articles.
+  const {
+    data: articles,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-articles`);
 
   return (
     <>
@@ -73,14 +63,31 @@ const Blogs = () => {
 
             {/* Only show empty state when not loading and no articles exist */}
             {!loading && articles.length === 0 && (
-              <div className="text-center py-5">
-                <div className="empty-state">
-                  <h5 className="mb-2">No Articles Found</h5>
-                  <p className="text-muted mb-0">
-                    We couldn’t find any artilces at the moment.
-                  </p>
-                </div>
-              </div>
+              <EmptyState>
+                <h5>
+                  {error ? 'Error loading articles' : 'No articles found'}
+                </h5>
+                <p className="text-muted mb-0">
+                  {error || 'We couldn’t find any articles at the moment.'}
+                </p>
+
+                {error === 'Unexpected data received.' ? (
+                  <Link
+                    to="/contact"
+                    className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                  >
+                    Contact Support
+                  </Link>
+                ) : (
+                  <span
+                    role="button"
+                    onClick={refetch}
+                    className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+                  >
+                    {error ? 'Retry' : 'Refresh'}
+                  </span>
+                )}
+              </EmptyState>
             )}
           </div>
         </section>

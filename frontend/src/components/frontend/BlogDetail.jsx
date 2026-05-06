@@ -6,57 +6,64 @@ import Footer from '../common/Footer';
 import { apiUrl, fileUrl } from '../common/http';
 import { useParams, NavLink, useLocation } from 'react-router-dom';
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no service is found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 const BlogDetail = () => {
   const params = useParams();
-  const location = useLocation(); // To check if user came from external page or from sidebar within blog detail page.
+  const location = useLocation(); // Determine navigation source via location.state.from  (external: Home Page/Latest Articel & Blog section, Blog page or global footer except ArticleDetail page; internal sidebar/footer of ArticleDetail page)
 
-  const [article, setArticle] = React.useState(null);
-  const [allArticles, setAllArticles] = React.useState([]);
+  const [articles, setArticles] = React.useState([]);
+  const sectionRef = React.useRef(null); // Reference to section element; used to scroll into view when navigation from external page or internal page.
 
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-  const sectionRef = React.useRef(null); // To scroll to top when user clicks on Read More Button of ServiceCard.
-
-  const fetchAllArticles = async () => {
-    const res = await fetch(`${apiUrl}/get-articles/`, {
-      method: 'GET',
-    });
-    const result = await res.json();
-    setAllArticles(result.data);
-  };
-
-  // Api call to fetch single article
-  const fetchArticle = async () => {
-    setLoading(true); // start loading
+  // Api call to fetch all articles for sidebar.
+  const fetchArticles = async () => {
     try {
-      const res = await fetch(`${apiUrl}/get-article/${params.id}`);
+      const res = await fetch(`${apiUrl}/get-articles/`);
+
+      if (!res.ok) {
+        throw new Error('SERVER_ERROR');
+      }
+
+      // Converts JSON (string) response body into JavaScript object.
+      // Throws if response is not valid JSON (caught in catch, but not as 'INVALID_RESPONSE' unless rethrown)
       const result = await res.json();
-      setArticle(result.data);
+
+      if (!result || !Array.isArray(result.data)) {
+        throw new Error('INVALID_RESPONSE');
+      }
+
+      setArticles(result.data);
     } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // stop loading
+      console.error('Fetch articles error:', error);
+      setArticles([]); // safe fallback in case of error to avoid infinite loading skeleton bug in sidebar and to show empty state in sidebar instead of loading skeleton.
     }
   };
 
+  // use hook to manage all state and fetch blog details.
+  const {
+    data: article,
+    loading,
+    error,
+  } = useFetch(`${apiUrl}/get-article/${params.id}`, false); // use false to fetch single article instead of array(list) of articles.
+
   React.useEffect(() => {
     if (location.state?.from === 'external') {
-      window.scrollTo(0, 0); // If user came from external page like Home page (LatestArticle) or Blog page then scroll to top, because they might be in middle of the page when they click on a article. But if they are clicking on article from sidebar of BlogDetail page, we don't scroll to top because they are already on the article detail page.
+      window.scrollTo(0, 0); // If user came from external page like Home page or Blog page then scroll to top, because they might be in middle or end of the page when they click on a particlar article. But if they are clicking on article from sidebar of ArticleDetail page, we don't scroll to top because they are already on the B detail page.
     } else if (location.state?.from === 'footer') {
-      sectionRef.current.scrollIntoView();
+      sectionRef.current.scrollIntoView(); // Scroll the page until this section is visible, <section className="section-10 pt-5 pb-4" ref={sectionRef}>
     } else if (location.state?.from === 'sidebar') {
       sectionRef.current?.scrollIntoView();
     }
 
-    fetchArticle();
-    fetchAllArticles();
-  }, [params.id]); // Added params.id as a dependency to refetch when the id changes, means when user clicks on another service from sidebar, it will fetch that service details.
+    fetchArticles();
+  }, [params.id]); // Added params.id as a dependency to refetch when the id changes, means when user clicks on another article from sidebar, it will fetch that article details.
 
   return (
     <>
       <Header />
 
-      <main style ={{ marginTop: '80px' }}>
+      <main style={{ marginTop: '80px' }}>
         <Banner
           heading={
             'Projects That Define Us and Reflect <br /> Our Commitment to Excellence'
@@ -111,12 +118,14 @@ const BlogDetail = () => {
 
                   {/*  No Data, only show empty state when not loading and no article exist */}
                   {!loading && !article && (
-                    <div
-                      className="d-flex justify-content-center align-items-center"
-                      style={{ minHeight: '400px' }}
-                    >
-                      No Data Found
-                    </div>
+                    <EmptyState>
+                      <h5>
+                        {error ? 'Error loading article' : 'No data found'}
+                      </h5>
+                      <p className="text-muted mb-0">
+                        {error || 'We couldn’t find this article.'}
+                      </p>
+                    </EmptyState>
                   )}
                 </div>
               </div>
@@ -127,8 +136,8 @@ const BlogDetail = () => {
                   <div className="card-body p-4">
                     <h3 className="fw-bold mb-4 mt-2">Latest Blogs</h3>
 
-                    {allArticles &&
-                      allArticles.map((article) => {
+                    {articles &&
+                      articles.map((article) => {
                         return (
                           <div
                             className="article-item d-flex align-items-start"

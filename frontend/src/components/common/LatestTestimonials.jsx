@@ -1,6 +1,8 @@
 import React from 'react';
 import { apiUrl, fileUrl } from '../common/http';
 import SkeletonLoader from '../common/SkeletonLoader';
+import EmptyState from '../common/EmptyState'; // Reusable component to show empty state when no services are found.
+import useFetch from '../../hooks/useFetch'; // Reusable hook to fetch data from API
 
 // Import Swiper React components.
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -11,25 +13,13 @@ import { Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css/pagination';
 
 const LatestTestimonials = () => {
-  const [testimonials, setTestimonials] = React.useState([]);
-  const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api.
-
-  // API call to fetch latest 5 testimonials
-  const fetchLatestTestimonials = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/get-latest-testimonials?limit=5`);
-      const result = await res.json();
-      setTestimonials(result.data); // data is coming from backend api response latestTestimonials function of TestimonialsController.
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false); // always stop loading
-    }
-  };
-
-  React.useEffect(() => {
-    fetchLatestTestimonials();
-  }, []);
+  // use hook to manage all state and fetch latest testimonials.
+  const {
+    data: testimonials,
+    loading,
+    error,
+    refetch,
+  } = useFetch(`${apiUrl}/get-latest-testimonials?limit=4`);
 
   return (
     <section className="section-5 pt-4 pt-sm-5 pb-md-4">
@@ -124,7 +114,31 @@ const LatestTestimonials = () => {
 
         {/* only show when not loading and no testimonials exist */}
         {!loading && testimonials.length === 0 && (
-          <p className="text-center pt-5">No testimonials found</p>
+          <EmptyState>
+            <h5>
+              {error ? 'Error loading testimonials' : 'No testimonials found'}
+            </h5>
+            <p className="text-muted mb-0">
+              {error || 'We couldn’t find any testimonials at the moment.'}
+            </p>
+
+            {error === 'Unexpected data received.' ? (
+              <Link
+                to="/contact"
+                className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+              >
+                Contact Support
+              </Link>
+            ) : (
+              <span
+                role="button"
+                onClick={refetch}
+                className="text-primary fw-bold mt-2 d-inline-block text-decoration-underline"
+              >
+                {error ? 'Retry' : 'Refresh'}
+              </span>
+            )}
+          </EmptyState>
         )}
       </div>
     </section>
