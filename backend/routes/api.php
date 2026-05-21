@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\admin\DashboardController as AdminDashboardController;
@@ -15,72 +16,85 @@ use App\Http\Controllers\frontend\ArticleController as FrontendArticleController
 use App\Http\Controllers\frontend\TestimonialController as FrontendTestimonialController;
 use App\Http\Controllers\frontend\MemberController as FrontendMemberController;
 
+// Frontend & Public Routes
 
-// frontend and public routes.
 Route::post('authenticate', [AuthenticationController::class, 'authenticate']);
+Route::post('contact', [ContactController::class, 'index']);
 
-Route::get('get-services', [FrontendServiceController::class, 'index']);    // Public route to get all active services for the frontend.
-Route::get('get-latest-services', [FrontendServiceController::class, 'latestServices']);     // Public route to get latest active with limit services list for the frontend.
-Route::get('get-service/{id}', [FrontendServiceController::class, 'service']);     // Public route to get a specific details of an active service for the frontend.
-Route::post('contact', [ContactController::class, 'index']);     // Public route to send contact email from the frontend contact form.
+// Frontend Services
+Route::controller(FrontendServiceController::class)->group(function () {
+    Route::get('get-services', 'index');
+    Route::get('get-latest-services', 'latestServices');
+    Route::get('get-service/{id}', 'service');
+});
 
-Route::get('get-projects', [FrontendProjectController::class, 'index']);     // Public route to get all active projects for the frontend.
-Route::get('get-latest-projects', [FrontendProjectController::class, 'latestProjects']);     // Public route to get latest active with limit projects list for the frontend.
-Route ::get('get-project/{id}', [FrontendProjectController::class, 'project']);     // Public route to get a specific details of an active project for the frontend.
+// Frontend Projects
+Route::controller(FrontendProjectController::class)->group(function () {
+    Route::get('get-projects', 'index');
+    Route::get('get-latest-projects', 'latestProjects');
+    Route::get('get-project/{id}', 'project');
+});
 
-Route::get('get-articles', [FrontendArticleController::class, 'index']);     // Public route to get all active articles for the frontend.
-Route::get('get-latest-articles', [FrontendArticleController::class, 'latestArticles']);     // Public route to get all active with limit articles list for the frontend.
-Route::get('get-article/{id}', [FrontendArticleController::class, 'article']);     // Public route to get a specific details of an active article for the frontend.
+// Frontend Articles
+Route::controller(FrontendArticleController::class)->group(function () {
+    Route::get('get-articles', 'index');
+    Route::get('get-latest-articles', 'latestArticles');
+    Route::get('get-article/{id}', 'article');
+});
 
-Route::get('get-testimonials', [FrontendTestimonialController::class, 'index']);     // Public route to get all active testimonials for the frontend.
-Route::get('get-latest-testimonials', [FrontendTestimonialController::class, 'latestTestimonials']);     // Public route to get latest active with limit testimonials list for the frontend.
+// Frontend Testimonials
+Route::controller(FrontendTestimonialController::class)->group(function () {
+    Route::get('get-testimonials', 'index');
+    Route::get('get-latest-testimonials', 'latestTestimonials');
+});
 
-Route::get('get-members', [FrontendMemberController::class, 'index']);     // Public route to get all active members for the frontend in aboutus page.
+// Frontend Members
+Route::controller(FrontendMemberController::class)->group(function () {
+    Route::get('get-members', 'index');
+});
 
 
-Route::group(['middleware' => 'auth:sanctum'], function () {  // Routes inside this group are protected by Laravel Sanctum middleware. Only users who send a valid Bearer token (from login) can access these routes.
+// Backend Admin Routes (Protected by Sanctum)
 
-    // Bakend Admin Dashboard and Authentication Routes.
+Route::group(['middleware' => 'auth:sanctum', 'prefix' => 'admin'], function () {
+
+    // Auth & Dashboard
     Route::get('dashboard', [AdminDashboardController::class, 'index']);
-    Route::get('logout', [AuthenticationController::class, 'logout']); 
+    Route::get('logout', [AuthenticationController::class, 'logout']);
+    Route::post('temp-images', [TempImageController::class, 'store']);
 
-    // Bakend Admin User Profile Routes.
-    // Service Routes.
-    Route::post('services', [ServiceController::class, 'store']); 
-    Route::get('services', [ServiceController::class, 'index']); 
-    Route::get('services/{id}', [ServiceController::class, 'show']); 
-    Route::put('services/{id}', [ServiceController::class, 'update']); 
-    Route::delete('services/{id}', [ServiceController::class, 'destroy']); 
+    // Admin Service Routes
+    Route::prefix('services')->controller(ServiceController::class)->group(function () {
+        Route::get('trash', 'trashed');
+        Route::put('{id}/restore', 'restore');
+    });
+    Route::apiResource('services', ServiceController::class);
 
-    // Project Routes.
-    Route::post('projects', [ProjectController::class, 'store']);
-    Route::get('projects', [ProjectController::class, 'index']);
-    Route::get('projects/{id}', [ProjectController::class, 'show']);
-    Route::put('projects/{id}', [ProjectController::class, 'update']);
-    Route::delete('projects/{id}', [ProjectController::class, 'destroy']);
-    
-    // Article Routes.
-    Route::post('articles', [ArticleController::class, 'store']);
-    Route::get('articles', [ArticleController::class, 'index']);
-    Route::get('articles/{id}', [ArticleController::class, 'show']);
-    Route::put('articles/{id}', [ArticleController::class, 'update']);
-    Route::delete('articles/{id}', [ArticleController::class, 'destroy']);
-    
-    //Testimonial Routes.
-    Route::post('testimonials', [TestimonialController::class, 'store']);
-    Route::get('testimonials', [TestimonialController::class, 'index']);
-    Route::get('testimonials/{id}', [TestimonialController::class, 'show']);
-    Route::put('testimonials/{id}', [TestimonialController::class, 'update']);
-    Route::delete('testimonials/{id}', [TestimonialController::class, 'destroy']);
+    // Admin Project Routes
+    Route::prefix('projects')->controller(ProjectController::class)->group(function () {
+        Route::get('trash', 'trashed');
+        Route::put('{id}/restore', 'restore');
+    });
+    Route::apiResource('projects', ProjectController::class);
 
-    //Member Routes.
-    Route::post('members', [MemberController::class, 'store']);
-    Route::get('members', [MemberController::class, 'index']);
-    Route::get('members/{id}', [MemberController::class, 'show']);
-    Route::put('members/{id}', [MemberController::class, 'update']);
-    Route::delete('members/{id}', [MemberController::class, 'destroy']);
+    // Admin Article Routes
+    Route::prefix('articles')->controller(ArticleController::class)->group(function () {
+        Route::get('trash', 'trashed');
+        Route::put('{id}/restore', 'restore');
+    });
+    Route::apiResource('articles', ArticleController::class);
 
-    // Temporary Image Upload Route.
-    Route::post('temp-images', [TempImageController::class, 'store']); 
+    // Admin Testimonial Routes
+    Route::prefix('testimonials')->controller(TestimonialController::class)->group(function () {
+        Route::get('trash', 'trashed');
+        Route::put('{id}/restore', 'restore');
+    });
+    Route::apiResource('testimonials', TestimonialController::class);
 
-}); 
+    // Admin Member Routes
+    Route::prefix('members')->controller(MemberController::class)->group(function () {
+        Route::get('trash', 'trashed');
+        Route::put('{id}/restore', 'restore');
+    });
+    Route::apiResource('members', MemberController::class);
+});
