@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Article extends Model
 {
@@ -21,4 +22,6 @@ class Article extends Model
             'created_at' => 'datetime:d M, Y',
         ];
     }
+
+    use SoftDeletes;
 }
