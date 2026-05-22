@@ -10,9 +10,9 @@ class ImageHelper
 {
     /**
      * Processes temp images, moves them to target folder, and cleans up.
-     * @param $tempImage - The temp image model
-     * @param $folder - The target folder name
-     * @param bool $createLarge - Whether to create a large version (default: true)
+     * @param \App\Models\TempImage $tempImage - The temp image model
+     * @param string $folder - The target folder name
+     * @param bool $createLarge - Whether to create a large version
      */
     public static function processAndCleanup($tempImage, $folder, $createLarge = true)
     {
