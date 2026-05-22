@@ -20,7 +20,7 @@ class ProjectController extends Controller
         $projects = Project::orderBy('created_at', 'DESC')->get();
         return response()->json([
             'status' => true,
-            'message' => 'All Projects list',
+            'message' => 'All projects list',
             'data' => $projects
         ]);
     }
@@ -177,9 +177,46 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function destroy($id)   // This method is used to delete a project and its associated images from disk.
+    // FETCH TRASHED PROJECTS (For the Restore Data page)
+    public function trashed()
     {
-        $project = Project::find($id);
+        // onlyTrashed() fetches only records where deleted_at is NOT NULL
+        $projects = Project::onlyTrashed()->orderBy('deleted_at', 'DESC')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Trash list retrieved successfully',
+            'data' => $projects
+        ]);
+    }
+
+    // RESTORE A DELETED PROJECT
+    public function restore($id)
+    {
+        $project = Project::onlyTrashed()->find($id);
+
+        if (!$project) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Project not found in Trash.'
+            ], 404);
+        }
+
+        $project->restore(); // Clears the deleted_at column
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Project restored successfully.',
+            'data' => $project
+        ]);
+    }
+
+    // DELETE / PERMANENT DELETE LOGIC
+    public function destroy($id)
+    {
+        // findWithTrashed allows us to find the record even if it is soft-deleted
+        $project = Project::withTrashed()->find($id);
+
         if (!$project) {
             return response()->json([
                 'status' => false,
@@ -187,14 +224,28 @@ class ProjectController extends Controller
             ], 404);
         }
 
-        File::delete(public_path('uploads/projects/small/' . $project->image));
-        File::delete(public_path('uploads/projects/large/' . $project->image));
+        // Case 1: Item is already in Trash -> Permanent Delete
+        if ($project->trashed()) {
+            // Delete actual files only when permanently wiping
+            if ($project->image) {
+                File::delete(public_path('uploads/projects/small/' . $project->image));
+                File::delete(public_path('uploads/projects/large/' . $project->image));
+            }
 
+            $project->forceDelete(); // Removes from DB permanently
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Project deleted permanently.'
+            ]);
+        }
+
+        // Case 2: Item is active -> Move to Trash (Soft Delete)
         $project->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Project deleted successfully.'
+            'message' => 'Project moved to Trash successfully.'
         ]);
     }
 }

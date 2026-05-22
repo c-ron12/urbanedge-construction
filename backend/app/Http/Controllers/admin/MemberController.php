@@ -18,7 +18,7 @@ class MemberController extends Controller
         $members = Member::orderBy('created_at', 'DESC')->get();
         return response()->json([
             'status' => true,
-            'message' => 'All Members list',
+            'message' => 'All members list',
             'data' => $members,
         ]);
     }
@@ -34,7 +34,7 @@ class MemberController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
+            return response()->json([ 
                 'status' => false,
                 'errors' => $validator->errors()
             ], 422);
@@ -62,7 +62,7 @@ class MemberController extends Controller
         $member->save();
         return response()->json([
             'status' => true,
-            'message' => 'Member Created Successfully',
+            'message' => 'Member created successfully',
             'data' => $member
         ], 201);
 
@@ -145,10 +145,46 @@ class MemberController extends Controller
         ]);
     }
 
-    // DELETE MEMBER API.
-    public function destroy($id)   // This method is used to delete a member record from the database and also delete its associated images from the disk.
+    // FETCH TRASHED MEMBERS (For the Restore Data page)
+    public function trashed()
     {
-        $member = Member::find($id);
+        // onlyTrashed() fetches only records where deleted_at is NOT NULL
+        $member = Member::onlyTrashed()->orderBy('deleted_at', 'DESC')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Trash list retrieved successfully',
+            'data' => $member
+        ]);
+    }
+
+    // RESTORE A DELETED member
+    public function restore($id)
+    {
+        $member = Member::onlyTrashed()->find($id);
+
+        if (!$member) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Member not found in Trash.'
+            ], 404);
+        }
+
+        $member->restore(); // Clears the deleted_at column
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Member restored successfully.',
+            'data' => $member
+        ]);
+    }
+
+    // DELETE / PERMANENT DELETE LOGIC
+    public function destroy($id)
+    {
+        // findWithTrashed allows us to find the record even if it is soft-deleted
+        $member = Member::withTrashed()->find($id);
+
         if (!$member) {
             return response()->json([
                 'status' => false,
@@ -156,14 +192,28 @@ class MemberController extends Controller
             ], 404);
         }
 
-        File::delete(public_path('uploads/members/small/' . $member->image));
-        File::delete(public_path('uploads/members/large/' . $member->image));
+        // Case 1: Item is already in Trash -> Permanent Delete
+        if ($member->trashed()) {
+            // Delete actual files only when permanently wiping
+            if ($member->image) {
+                File::delete(public_path('uploads/member/small/' . $member->image));
+                File::delete(public_path('uploads/member/large/' . $member->image));
+            }
 
+            $member->forceDelete(); // Removes from DB permanently
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Member permanently deleted.'
+            ]);
+        }
+
+        // Case 2: Item is active -> Move to Trash (Soft Delete)
         $member->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Member deleted successfully.'
+            'message' => 'Member moved to Trash successfully.'
         ]);
     }
 }

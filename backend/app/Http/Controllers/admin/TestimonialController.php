@@ -18,7 +18,7 @@ class TestimonialController extends Controller
         $testimonials = Testimonial::orderBy('created_at', 'desc')->get();
         return response()->json([
             'status' => true,
-            'message' => 'All Testimonials list',
+            'message' => 'All testimonials list',
             'data' => $testimonials
         ]);
     }
@@ -43,7 +43,7 @@ class TestimonialController extends Controller
 
     }
 
-    // CREAT TESTIMONIALS API, create Testimonial model and testimonials table.
+    // CREATE TESTIMONIALS API, create Testimonial model and testimonials table.
     public function store(Request $request)    // This method is used to create a new testimonial record in the database.
     {
         $validator = Validator::make($request->all(), [
@@ -159,23 +159,75 @@ class TestimonialController extends Controller
         ]);
     }
 
-    // DELETE TESTIMONIAL API.
-    public function destroy($id)   // This method is used to delete a testimonial record from the database and also delete its associated images from the disk.
+    // FETCH TRASHED TESTIMONIALS (For the Restore Data page)
+    public function trashed()
     {
-        $testimonial = Testimonial::find($id);
+        // onlyTrashed() fetches only records where deleted_at is NOT NULL
+        $testimonials = Testimonial::onlyTrashed()->orderBy('deleted_at', 'DESC')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Trash list retrieved successfully',
+            'data' => $testimonials
+        ]);
+    }
+
+    // RESTORE A DELETED TESTIMONIAL
+    public function restore($id)
+    {
+        $testimonial = Testimonial::onlyTrashed()->find($id);
+
+        if (!$testimonial) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Testimonial not found in trash.'
+            ], 404);
+        }
+
+        $testimonial->restore(); // Clears the deleted_at column
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Testimonial restored successfully.',
+            'data' => $testimonial
+        ]);
+    }
+
+    // DELETE / PERMANENT DELETE LOGIC
+    public function destroy($id)
+    {
+        // findWithTrashed allows us to find the record even if it is soft-deleted
+        $testimonial = Testimonial::withTrashed()->find($id);
+
         if (!$testimonial) {
             return response()->json([
                 'status' => false,
                 'message' => 'Testimonial not found.'
             ], 404);
         }
-        File::delete(public_path('uploads/testimonials/small/' . $testimonial->image));
 
+        // Case 1: Item is already in Trash -> Permanent Delete
+        if ($testimonial->trashed()) {
+            // Delete actual files only when permanently wiping
+            if ($testimonial->image) {
+                File::delete(public_path('uploads/testimonials/small/' . $testimonial->image));
+                File::delete(public_path('uploads/testimonials/large/' . $testimonial->image));
+            }
+
+            $testimonial->forceDelete(); // Removes from DB permanently
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Testimonial deleted permanently.'
+            ]);
+        }
+
+        // Case 2: Item is active -> Move to Trash (Soft Delete)
         $testimonial->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Testimonial deleted successfully.'
+            'message' => 'Testimonial moved to Trash successfully.'
         ]);
     }
 }

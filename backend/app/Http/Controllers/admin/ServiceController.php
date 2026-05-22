@@ -23,7 +23,7 @@ class ServiceController extends Controller
         $services = Service::orderBy('created_at', 'DESC')->get();
         return response()->json([
             'status' => true,
-            'message' => 'All Services list',
+            'message' => 'All services list',
             'data' => $services
         ]);
     }
@@ -66,7 +66,7 @@ class ServiceController extends Controller
                 $imageName = ImageHelper::processAndCleanup($tempImage, 'services');
 
                 $model->image = $imageName;
- 
+
                 // DATABASE CLEANUP: Delete the temp record from the temp_images table
                 $tempImage->delete();
             }
@@ -188,28 +188,75 @@ class ServiceController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-
-    // DELETE SERVICE API.
-    public function destroy($id)    // This method is used to delete a service record from the database and also delete its associated images from the disk.
+    // FETCH TRASHED SERVICES (For the Restore Data page)
+    public function trashed()
     {
-        $service = Service::find($id);
+        // onlyTrashed() fetches only records where deleted_at is NOT NULL
+        $services = Service::onlyTrashed()->orderBy('deleted_at', 'DESC')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Trash list retrieved successfully',
+            'data' => $services
+        ]);
+    }
+
+    // RESTORE A DELETED SERVICE
+    public function restore($id)
+    {
+        $service = Service::onlyTrashed()->find($id);
+
+        if (!$service) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Service not found in Trash.'
+            ], 404);
+        }
+
+        $service->restore(); // Clears the deleted_at column
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Service restored successfully.',
+            'data' => $service
+        ]);
+    }
+
+    // DELETE / PERMANENT DELETE LOGIC
+    public function destroy($id)
+    {
+        // findWithTrashed allows us to find the record even if it is soft-deleted
+        $service = Service::withTrashed()->find($id);
+
         if (!$service) {
             return response()->json([
                 'status' => false,
                 'message' => 'Service not found.'
             ], 404);
         }
-        File::delete(public_path('uploads/services/small/' . $service->image));
-        File::delete(public_path('uploads/services/large/' . $service->image));
 
+        // Case 1: Item is already in Trash -> Permanent Delete
+        if ($service->trashed()) {
+            // Delete actual files only when permanently wiping
+            if ($service->image) {
+                File::delete(public_path('uploads/services/small/' . $service->image));
+                File::delete(public_path('uploads/services/large/' . $service->image));
+            }
+
+            $service->forceDelete(); // Removes from DB permanently
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Service deleted permanently.'
+            ]);
+        }
+
+        // Case 2: Item is active -> Move to Trash (Soft Delete)
         $service->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Service deleted successfully.'
+            'message' => 'Service moved to Trash successfully.'
         ]);
     }
 }

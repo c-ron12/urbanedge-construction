@@ -19,7 +19,7 @@ class ArticleController extends Controller
         $articles = Article::orderBy('created_at', 'DESC')->get();
         return response()->json([
             'status' => true,
-            'message' => 'All Articles list',
+            'message' => 'All articles list',
             'data' => $articles
         ]);
     }
@@ -167,9 +167,46 @@ class ArticleController extends Controller
         ]);
     }
 
-    public function destroy($id)     // This method is used to delete an article and its associated images from disk.
+    // FETCH TRASHED ARTICLES (For the Restore Data page)
+    public function trashed()
     {
-        $article = Article::find($id);
+        // onlyTrashed() fetches only records where deleted_at is NOT NULL
+        $articles = Article::onlyTrashed()->orderBy('deleted_at', 'DESC')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Trash list retrieved successfully',
+            'data' => $articles
+        ]);
+    }
+
+    // RESTORE A DELETED ARTICLE
+    public function restore($id)
+    {
+        $article = Article::onlyTrashed()->find($id);
+
+        if (!$article) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Article not found in Trash.'
+            ], 404);
+        }
+
+        $article->restore(); // Clears the deleted_at column
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Article restored successfully.',
+            'data' => $article
+        ]);
+    }
+
+    // DELETE / PERMANENT DELETE LOGIC
+    public function destroy($id)
+    {
+        // findWithTrashed allows us to find the record even if it is soft-deleted
+        $article = Article::withTrashed()->find($id);
+
         if (!$article) {
             return response()->json([
                 'status' => false,
@@ -177,14 +214,28 @@ class ArticleController extends Controller
             ], 404);
         }
 
-        File::delete(public_path('uploads/articles/small/' . $article->image));
-        File::delete(public_path('uploads/articles/large/' . $article->image));
+        // Case 1: Item is already in Trash -> Permanent Delete
+        if ($article->trashed()) {
+            // Delete actual files only when permanently wiping
+            if ($article->image) {
+                File::delete(public_path('uploads/articles/small/' . $article->image));
+                File::delete(public_path('uploads/articles/large/' . $article->image));
+            }
 
+            $article->forceDelete(); // Removes from DB permanently
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Article permanently deleted.'
+            ]);
+        }
+
+        // Case 2: Item is active -> Move to Trash (Soft Delete)
         $article->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Article deleted successfully.'
+            'message' => 'Article moved to Trash successfully.'
         ]);
     }
 }
