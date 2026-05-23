@@ -9,5 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-// This will run the cleanup command automatically every day at midnight
-Schedule::command('temp-images:clean')->daily();
+// Runs the global cleanup every day at midnight
+Schedule::command('cleanup:all')->daily();
