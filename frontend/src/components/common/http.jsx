@@ -1,12 +1,18 @@
+// 1. Base URL for files/images
+export const fileUrl = 'http://localhost:8000';
+
+// 2. Use this for Public Frontend requests (matches public Laravel routes)
 export const apiUrl = 'http://localhost:8000/api';
-export const fileUrl = 'http://localhost:8000';    // for accessing images and files.
+
+// 3. Use this for Admin/Protected requests (matches Laravel prefix)
+export const adminApiUrl = 'http://localhost:8000/api/admin';
+
+// 4. Token retrieval logic
 export const token = () => {
-    const userInfo = localStorage.getItem('userInfo');  // userInfo is coming from login.jsx where we have stored user info in local storage after login.
-    if (userInfo) {
-        const data = JSON.parse(userInfo);
-        return data.token;
-    }   
-
-    return null;
-}
-
+  const userInfo = localStorage.getItem('userInfo');
+  if (userInfo) {
+    const data = JSON.parse(userInfo);
+    return data.token;
+  }
+  return null;
+};
