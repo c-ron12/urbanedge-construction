@@ -2,15 +2,16 @@ import React from 'react';
 import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
-import { Link } from 'react-router-dom'; // usinf link instead of anchor tag to avoid page reload.
+
+import { Link } from 'react-router-dom'; // using link instead of anchor tag to avoid page reload.
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
+import { confirmToast } from '../../common/confirmToast';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
 
-const show = () => {
+const Show = () => {
   const [projects, setProjects] = React.useState([]); // state to store projects list, used in table below and in delete function.
   const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api. true means data is being fetched, false means data has been fetched and we can show the projects or empty state.
   const [error, setError] = React.useState(null); // To store error message if api call fails, used in empty state below.
@@ -18,10 +19,11 @@ const show = () => {
   // FETCH PROJECTS FROM BACKEND API.
   const fetchProjects = async () => {
     setLoading(true); // start loading, show loading spinner.
+    setError(null); // clear previous errors (if any) before new fetch attempt, (important when retrying API). Without this, old error messages could still show
 
     // API call to fetch projects
     try {
-      const result = await request(`${apiUrl}/projects`);
+      const result = await request('projects');
 
       if (result.status === false) {
         setError(result.message || 'Failed to load projects');
@@ -39,56 +41,40 @@ const show = () => {
     }
   };
 
-  const deleteProject = async (id) => {
-    // function to delete project by id.
+  const executeDelete = async (id) => {
+    try {
+      const result = await request(`projects/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (confirm('Are you sure you want to delete this project?')) {
-      try {
-        const res = await fetch(`${apiUrl}/projects/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
-
-        // Handle HTTP errors
-        if (!res.ok) {
-          throw new Error('SERVER_ERROR');
-        }
-
-        const result = await res.json();
-
-        // Safety check
-        if (!result || typeof result.status === 'undefined') {
-          throw new Error('INVALID_RESPONSE');
-        }
-
-        if (result.status === true) {
-          //  It filters the current 'projects' array stored in component state).
-          // It keeps every project whose 'id' does NOT match the 'id' of the project that was just deleted.
-          const filteredservices = projects.filter(
-            (project) => project.id !== id
-          ); // remove deleted project from state.
-
-          setProjects(filteredservices);
-          toast.success(result.message);
-        } else {
-          toast.error(result.message || 'Delete failed');
-        }
-      } catch (error) {
-        console.error('Delete project error:', error);
-
-        if (error.message === 'Failed to fetch') {
-          toast.error('Network error. Please check your internet connection.');
-        } else if (error.message === 'SERVER_ERROR') {
-          toast.error('Server error. Please try again later.');
-        } else {
-          toast.error('Failed to delete project');
-        }
+      if (result.status === true) {
+        const filteredProjects = projects.filter(
+          (project) => project.id !== id
+        );
+        setProjects(filteredProjects);
+        toast.success(result.message || 'Project moved to Trash successfully.');
+      } else {
+        toast.error(result.message || 'Delete failed');
       }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete project'));
     }
+  };
+
+  // Custom Toast Confirmation
+  const confirmDelete = (project) => {
+    confirmToast({
+      message: (
+        <>
+          Are you sure you want to delete this <strong>{project.title}</strong>?
+        </>
+      ),
+
+      description:
+        'This project can be restored from the Trash within 30 days.',
+
+      onConfirm: () => executeDelete(project.id),
+    });
   };
 
   React.useEffect(() => {
@@ -100,22 +86,31 @@ const show = () => {
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
-            <div className="col-md-3 mb-4 mb-md-0">
+            <div className="col-md-3">
               <Sidebar />
             </div>
-            <div className="col-md-9">
+            <div className="col-md-9 mt-4 mt-md-0">
               <div className="card shadow border-0">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between border-bottom pb-4">
+                  <div className="d-flex border-bottom pb-3">
                     <h5>Projects</h5>
-                    <Link
-                      to="/admin/projects/create"
-                      className="btn btn-primary"
-                    >
-                      Create
-                    </Link>
+                    <div className="d-flex ms-auto column-gap-3 row-gap-1 action-btns">
+                      <Link
+                        to="/admin/projects/create"
+                        className="btn btn-primary btn-md"
+                      >
+                        Create
+                      </Link>
+
+                      <Link
+                        to="/admin/projects/trash"
+                        className="btn btn-primary btn-md"
+                      >
+                        Trash
+                      </Link>
+                    </div>
                   </div>
                   {/* Loading State */}
                   {loading && (
@@ -131,7 +126,7 @@ const show = () => {
                         <thead className="table-light border-bottom">
                           <tr>
                             <th className="py-3">ID</th>
-                            <th className="py-3">Name</th>
+                            <th className="py-3">Title</th>
                             <th className="py-3">Slug</th>
                             <th className="py-3">Status</th>
                             <th className="py-3">Actions</th>
@@ -177,39 +172,39 @@ const show = () => {
                             </tr>
                           ) : (
                             projects.map((project) => (
-                              <tr key={project?.id}>
-                                <td>{project?.id}</td>
+                              <tr key={project.id}>
+                                <td>{project.id}</td>
                                 <td style={{ maxWidth: '250px' }}>
                                   <div
                                     className="text-truncate"
-                                    title={project?.title}
+                                    title={project.title}
                                   >
-                                    {project?.title}
+                                    {project.title}
                                   </div>
                                 </td>
 
                                 <td style={{ maxWidth: '250px' }}>
                                   <div
                                     className="text-truncate"
-                                    title={project?.slug}
+                                    title={project.slug}
                                   >
-                                    {project?.slug}
+                                    {project.slug}
                                   </div>
                                 </td>
 
                                 <td>
-                                  {project?.status == 1 ? 'Active' : 'Inactive'}
+                                  {project.status == 1 ? 'Active' : 'Inactive'}
                                 </td>
 
                                 <td>
                                   <Link
-                                    to={`/admin/projects/edit/${project?.id}`} // project is the variable from map function.
+                                    to={`/admin/projects/edit/${project.id}`} // project is the variable from map function.
                                     className="btn btn-sm btn-info me-3 mb-2 mb-xl-0"
                                   >
                                     Edit
                                   </Link>
                                   <button
-                                    onClick={() => deleteProject(project?.id)}
+                                    onClick={() => confirmDelete(project)}
                                     type="button"
                                     className="btn btn-sm btn-danger"
                                   >
@@ -234,4 +229,4 @@ const show = () => {
   );
 };
 
-export default show;
+export default Show;

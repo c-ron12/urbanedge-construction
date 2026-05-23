@@ -3,25 +3,34 @@ import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
 import { useForm } from 'react-hook-form';
-import { apiUrl, token, fileUrl } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
+import { fileUrl } from '../../common/http';
 import { toast } from 'react-toastify';
-import { Link, useNavigate, useParams } from 'react-router-dom'; // using useParams to get project id from url.
-import JoditEditor from 'jodit-react'; // WYSIWYG editor
+
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
+import JoditEditor from 'jodit-react'; // WYSIWYG editor.
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
+import { useFormHelpers } from '../../../hooks/useFormHelpers';
 
 // EDIT PROJECT FORM
 const Edit = ({ placeholder = 'content' }) => {
-  // The placeholder prop is used to customize the text hint displayed in the Jodit Editor.
-  const editor = React.useRef(null); // ref for wising editor.
-  const [content, setContent] = React.useState(''); // content for wising editor.
-  const [project, setProject] = React.useState([]); // to store fetched project data.
-  const [isDisabled, setIsDisabled] = React.useState(false); // to disable submit button during image upload, false by default means button is enabled.
-  const [imageId, setImageId] = React.useState(null); // to store uploaded image id.
-  const [imagePreview, setImagePreview] = React.useState(null); // to store uploaded image preview url.
-  const [loading, setLoading] = React.useState(true); // true means data is being fetched
+  // Router Hooks, useParams to get project id from URL, useNavigate to navigate programmatically after successful update.
+  const params = useParams();
+  const navigate = useNavigate();
+
+  // Custom Hooks, Reusable logic for image upload, wysiwyg editor and form handling
+  const {
+    isDisabled,
+    setIsDisabled,
+    imageId,
+    imagePreview,
+    handleFile,
+    editor,
+    content,
+    setContent,
+  } = useFormHelpers('');
 
   const config = React.useMemo(
     () => ({
@@ -31,9 +40,11 @@ const Edit = ({ placeholder = 'content' }) => {
     [placeholder]
   );
 
-  const params = useParams(); // to get project id from browser url.
-  const navigate = useNavigate();
+  // Local states
+  const [loading, setLoading] = React.useState(true);
+  const [project, setProject] = React.useState({});
 
+  // --- React Hook Form ---
   const {
     register,
     handleSubmit,
@@ -48,7 +59,7 @@ const Edit = ({ placeholder = 'content' }) => {
 
       // --- API call to fetch project by id ---
       try {
-        const result = await request(`${apiUrl}/projects/${params.id}`);
+        const result = await request(`projects/${params.id}`);
 
         if (result.status === false) {
           toast.error('Failed to fetch project');
@@ -91,7 +102,7 @@ const Edit = ({ placeholder = 'content' }) => {
 
     // --- API call to edit projects ---
     try {
-      const result = await request(`${apiUrl}/projects/${params.id}`, {
+      const result = await request(`projects/${params.id}`, {
         method: 'PUT',
         body: JSON.stringify(newData),
       });
@@ -110,44 +121,12 @@ const Edit = ({ placeholder = 'content' }) => {
     }
   };
 
-  // Image upload handler
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImagePreview(URL.createObjectURL(file)); // Show image preview immediately after file selection.
-
-    const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
-    formData.append('image', file);
-    setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
-
-    // --- API call to upload image ---
-    try {
-      const result = await request(`${apiUrl}/temp-images`, {
-        method: 'POST',
-        body: formData, //  important: pass FormData directly
-      });
-
-      if (result.status === false) {
-        toast.error(result.errors?.image?.[0] || 'Image upload failed');
-        setImagePreview(null); // Clear preview if upload fails.
-      } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
-      }
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Image upload failed'));
-      setImagePreview(null); // Clear preview if upload fails.
-    } finally {
-      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
-    }
-  };
-
   return (
     <>
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
             <div className="col-md-3">
               <Sidebar />
@@ -302,6 +281,7 @@ const Edit = ({ placeholder = 'content' }) => {
                           Description (Full Content)
                         </label>
                         <JoditEditor
+                          id="description"
                           key={project.id} // Important for re-rendering with fetched data.
                           ref={editor}
                           value={content}
@@ -312,9 +292,12 @@ const Edit = ({ placeholder = 'content' }) => {
                       </div>
 
                       <div className="mb-3">
-                        <label className="form-label">Image</label>
+                        <label htmlFor="image" className="form-label">
+                          Image
+                        </label>
                         <input
                           type="file"
+                          id="image"
                           onChange={handleFile}
                           className="form-control"
                         />
