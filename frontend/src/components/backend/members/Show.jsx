@@ -2,15 +2,15 @@ import React from 'react';
 import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
 import { Link } from 'react-router-dom'; // using link instead of anchor tag to avoid page reload.
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
+import { confirmToast } from '../../common/confirmToast';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
 
-const show = () => {
+const Show = () => {
   const [members, setMembers] = React.useState([]); // state to store members list, used in table below and in delete function.
   const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api. true means data is being fetched, false means data has been fetched and we can show the members or empty state.
   const [error, setError] = React.useState(null); // To store error message if api call fails, used in empty state below.
@@ -18,10 +18,11 @@ const show = () => {
   // API call to fetch members
   const fetchMembers = async () => {
     setLoading(true); // start loading, show loading spinner.
+    setError(null); // clear previous errors (if any) before new fetch attempt, (important when retrying API). Without this, old error messages could still show
 
     // API call to fetch members
     try {
-      const result = await request(`${apiUrl}/members`);
+      const result = await request('members');
 
       if (result.status === false) {
         setError(result.message || 'Failed to load members');
@@ -30,7 +31,7 @@ const show = () => {
         return;
       }
 
-      setMembers(result.data || []); // <-- use result.data (array).. data is coming from backend API response admin/ServiceController@index.
+      setMembers(result.data || []); // <-- use result.data (array).. data is coming from backend API response admin/MemberController@index.
     } catch (error) {
       setError(getErrorMessage(error, 'Failed to load members'));
       setMembers([]); // safe fallback in case of error to avoid infinite loading skeleton bug.
@@ -39,54 +40,38 @@ const show = () => {
     }
   };
 
-  const deleteMember = async (id) => {
-    // function to delete member by id.
+  const executeDelete = async (id) => {
+    try {
+      const result = await request(`members/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (confirm('Are you sure you want to delete this member?')) {
-      try {
-        const res = await fetch(`${apiUrl}/members/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
-
-        // Handle HTTP errors
-        if (!res.ok) {
-          throw new Error('SERVER_ERROR');
-        }
-
-        const result = await res.json();
-
-        // Safety check
-        if (!result || typeof result.status === 'undefined') {
-          throw new Error('INVALID_RESPONSE');
-        }
-
-        if (result.status === true) {
-          //  It filters the current 'members' array stored in component state).
-          // It keeps every member whose 'id' does NOT match the 'id' of the member that was just deleted.
-          const filteredmembers = members.filter((member) => member.id !== id); // remove deleted member from state.
-
-          setMembers(filteredmembers);
-          toast.success(result.message);
-        } else {
-          toast.error(result.message || 'Delete failed');
-        }
-      } catch (error) {
-        console.error('Delete member error:', error);
-
-        if (error.message === 'Failed to fetch') {
-          toast.error('Network error. Please check your internet connection.');
-        } else if (error.message === 'SERVER_ERROR') {
-          toast.error('Server error. Please try again later.');
-        } else {
-          toast.error('Failed to delete member');
-        }
+      if (result.status === true) {
+        const filteredMembers = members.filter((member) => member.id !== id);
+        setMembers(filteredMembers);
+        toast.success(result.message || 'Member moved to Trash successfully.');
+      } else {
+        toast.error(result.message || 'Delete failed');
       }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete member'));
     }
+  };
+
+  // Custom Toast Confirmation
+  const confirmDelete = (member) => {
+    confirmToast({
+      message: (
+        <>
+          Are you sure you want to delete this <strong>{member.name}</strong>?
+        </>
+      ),
+
+      description:
+        'This member can be restored from the Trash within 30 days.',
+
+      onConfirm: () => executeDelete(member.id),
+    });
   };
 
   React.useEffect(() => {
@@ -98,22 +83,32 @@ const show = () => {
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
-            <div className="col-md-3 mb-4 mb-md-0">
+            <div className="col-md-3">
               <Sidebar />
             </div>
-            <div className="col-md-9">
+
+            <div className="col-md-9 mt-4 mt-md-0">
               <div className="card shadow border-0">
-                <div className="card-body p-4">
-                  <div className="d-flex justify-content-between border-bottom pb-4">
+                <div className="card-body">
+                  <div className="d-flex border-bottom pb-3">
                     <h5>Members</h5>
-                    <Link
-                      to="/admin/members/create"
-                      className="btn btn-primary"
-                    >
-                      Create
-                    </Link>
+                    <div className="d-flex ms-auto column-gap-3 row-gap-1 action-btns">
+                      <Link
+                        to="/admin/members/create"
+                        className="btn btn-primary btn-md"
+                      >
+                        Create
+                      </Link>
+
+                      <Link
+                        to="/admin/members/trash"
+                        className="btn btn-primary btn-md"
+                      >
+                        Trash
+                      </Link>
+                    </div>
                   </div>
                   {/* Loading State */}
                   {loading && (
@@ -192,7 +187,7 @@ const show = () => {
                                     Edit
                                   </Link>
                                   <button
-                                    onClick={() => deleteMember(member.id)}
+                                    onClick={() => confirmDelete(member)}
                                     type="button"
                                     className="btn btn-sm btn-danger"
                                   >
@@ -217,4 +212,4 @@ const show = () => {
   );
 };
 
-export default show;
+export default Show;

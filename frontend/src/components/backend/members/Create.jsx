@@ -3,7 +3,6 @@ import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
 import { useForm } from 'react-hook-form';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
 
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,20 +10,23 @@ import { Spinner } from 'react-bootstrap';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
+import { useFormHelpers } from '../../../hooks/useFormHelpers';
 
 // CREATE MEMBER FORM.
 const Create = () => {
-  const [isDisabled, setIsDisabled] = React.useState(false); // to disable submit button during image upload, false by default means button is enabled.
-  const [imageId, setImageId] = React.useState(null); // to store uploaded image id.
-  const [imagePreview, setImagePreview] = React.useState(null); // to store uploaded image preview url.
+  // Router Hook, useNavigate to navigate programmatically after successful update.
+  const navigate = useNavigate();
 
+  // Custom Hooks, Reusable logic for image upload and form handling
+  const { isDisabled, setIsDisabled, imageId, imagePreview, handleFile } =
+    useFormHelpers();
+
+  // --- React Hook Form ---
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
-
-  const navigate = useNavigate();
 
   // Form submit handler
   const onSubmit = async (data) => {
@@ -39,7 +41,7 @@ const Create = () => {
 
     // --- API Call to Create member ---.
     try {
-      const result = await request(`${apiUrl}/members`, {
+      const result = await request('members', {
         method: 'POST',
         body: JSON.stringify(newData), // filled up form data is being sent as JSON string, backend will parse it and get the data in controller.
       });
@@ -48,44 +50,17 @@ const Create = () => {
         toast.success(result.message); // message is coming from backend API response from ServiceController.php, store() method.
         navigate('/admin/members');
       } else {
-        toast.error(result.message);
+        // If the backend returned status: false (like 422 response)
+        if (result.errors) {
+          // map these errors to the form or show a specific toast
+          const firstError = Object.values(result.errors)[0][0];
+          toast.error(firstError);
+        } else {
+          toast.error(result.message || 'Something went wrong');
+        }
       }
     } catch (error) {
       toast.error(getErrorMessage(error)); // default fallback error message
-    } finally {
-      setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
-    }
-  };
-
-  // Image upload handler.
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImagePreview(URL.createObjectURL(file)); // Show image preview immediately after file selection.
-
-    setIsDisabled(true); // true means immediately disable the submit button during image upload, as soon as file is picked.
-
-    const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
-
-    formData.append('image', file); // image here is key and file is value
-
-    // --- API call to upload image ---
-    try {
-      const result = await request(`${apiUrl}/temp-images`, {
-        method: 'POST',
-        body: formData, //  important: pass FormData directly
-      });
-
-      if (result.status === false) {
-        toast.error(result.errors?.image?.[0] || 'Image upload failed');
-        setImagePreview(null); // Clear preview if upload fails.
-      } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
-      }
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Image upload failed'));
-      setImagePreview(null); // Clear preview if upload fails.
     } finally {
       setIsDisabled(false); // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
     }
@@ -96,7 +71,7 @@ const Create = () => {
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
             <div className="col-md-3">
               <Sidebar />
@@ -158,10 +133,20 @@ const Create = () => {
                       </label>
                       <input
                         id="linkedin_url"
-                        {...register('linkedin_url')}
+                        {...register('linkedin_url', {
+                          pattern: {
+                            value: /^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/,
+                            message: 'Please enter a valid LinkedIn URL',
+                          },
+                        })}
                         type="text"
-                        className="form-control"
+                        className={`form-control ${errors.linkedin_url && 'is-invalid'}`}
                       />
+                      {errors.linkedin_url && (
+                        <p className="invalid-feedback">
+                          {errors.linkedin_url?.message}
+                        </p>
+                      )}
                     </div>
 
                     <div className="mb-3">
