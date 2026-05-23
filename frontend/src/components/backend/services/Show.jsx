@@ -2,10 +2,11 @@ import React from 'react';
 import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
+
 import { Link } from 'react-router-dom'; // using link instead of anchor tag to avoid page reload.
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
+import { confirmToast } from '../../common/confirmToast';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
@@ -22,7 +23,7 @@ const Show = () => {
 
     // API call to fetch services
     try {
-      const result = await request(`${apiUrl}/services`);
+      const result = await request('services');
 
       if (result.status === false) {
         setError(result.message || 'Failed to load services');
@@ -40,56 +41,40 @@ const Show = () => {
     }
   };
 
-  const deleteService = async (id) => {
-    // function to delete service by id.
+  const executeDelete = async (id) => {
+    try {
+      const result = await request(`services/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (confirm('Are you sure you want to delete this service?')) {
-      try {
-        const res = await fetch(`${apiUrl}/services/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
-
-        // Handle HTTP errors
-        if (!res.ok) {
-          throw new Error('SERVER_ERROR');
-        }
-
-        const result = await res.json();
-
-        // Safety check
-        if (!result || typeof result.status === 'undefined') {
-          throw new Error('INVALID_RESPONSE');
-        }
-
-        if (result.status === true) {
-          //  It filters the current 'services' array stored in component state).
-          // It keeps every service whose 'id' does NOT match the 'id' of the service that was just deleted.
-          const filteredservices = services.filter(
-            (service) => service.id !== id
-          ); // remove deleted service from state.
-
-          setServices(filteredservices);
-          toast.success(result.message);
-        } else {
-          toast.error(result.message || 'Delete failed');
-        }
-      } catch (error) {
-        console.error('Delete service error:', error);
-
-        if (error.message === 'Failed to fetch') {
-          toast.error('Network error. Please check your internet connection.');
-        } else if (error.message === 'SERVER_ERROR') {
-          toast.error('Server error. Please try again later.');
-        } else {
-          toast.error('Failed to delete service');
-        }
+      if (result.status === true) {
+        const filteredServices = services.filter(
+          (service) => service.id !== id
+        );
+        setServices(filteredServices);
+        toast.success(result.message || 'Service moved to Trash successfully.');
+      } else {
+        toast.error(result.message || 'Delete failed');
       }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete service'));
     }
+  };
+
+  // Custom Toast Confirmation
+  const confirmDelete = (service) => {
+    confirmToast({
+      message: (
+        <>
+          Are you sure you want to delete this <strong>{service.title}</strong>?
+        </>
+      ),
+
+      description:
+        'This service can be restored from the Trash within 30 days.',
+
+      onConfirm: () => executeDelete(service.id),
+    });
   };
 
   React.useEffect(() => {
@@ -101,22 +86,31 @@ const Show = () => {
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
-            <div className="col-md-3 mb-4 mb-md-0">
+            <div className="col-md-3">
               <Sidebar />
             </div>
-            <div className="col-md-9">
+            <div className="col-md-9 mt-4 mt-md-0">
               <div className="card shadow border-0">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between border-bottom pb-4">
+                  <div className="d-flex border-bottom pb-3">
                     <h5>Services</h5>
-                    <Link
-                      to="/admin/services/create"
-                      className="btn btn-primary"
-                    >
-                      Create
-                    </Link>
+                    <div className="d-flex ms-auto column-gap-3 row-gap-1 action-btns">
+                      <Link
+                        to="/admin/services/create"
+                        className="btn btn-primary btn-md"
+                      >
+                        Create
+                      </Link>
+
+                      <Link
+                        to="/admin/services/trash"
+                        className="btn btn-primary btn-md"
+                      >
+                       Trash
+                      </Link>
+                    </div>
                   </div>
 
                   {/* Loading State */}
@@ -133,7 +127,7 @@ const Show = () => {
                         <thead className="table-light border-bottom">
                           <tr>
                             <th className="py-3">ID</th>
-                            <th className="py-3">Name</th>
+                            <th className="py-3">Title</th>
                             <th className="py-3">Slug</th>
                             <th className="py-3">Status</th>
                             <th className="py-3">Actions</th>
@@ -213,7 +207,7 @@ const Show = () => {
                                   </Link>
 
                                   <button
-                                    onClick={() => deleteService(service.id)}
+                                    onClick={() => confirmDelete(service)}
                                     type="button"
                                     className="btn btn-sm btn-danger"
                                   >
