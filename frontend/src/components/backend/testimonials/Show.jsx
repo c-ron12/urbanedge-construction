@@ -2,16 +2,18 @@ import React from 'react';
 import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
+
 import { Link } from 'react-router-dom'; // using link instead of anchor tag to avoid page reload.
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
+import { confirmToast } from '../../common/confirmToast';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
 
 // SHOW ALL TESTIMONIALS IN TABLE.
 const Show = () => {
+  // Local State
   const [testimonials, setTestimonials] = React.useState([]); // state to store testimonials list, used in table below and in delete function.
   const [loading, setLoading] = React.useState(true); // To show loading skeleton while fetching data from api. true means data is being fetched, false means data has been fetched and we can show the testimonials or empty state.
   const [error, setError] = React.useState(null); // To store error message if api call fails, used in empty state below.
@@ -19,10 +21,11 @@ const Show = () => {
   // API call to fetch testimonials
   const fetchTestimonials = async () => {
     setLoading(true); // start loading, show loading spinner.
-
+    setError(null); // clear previous errors (if any) before new fetch attempt, (important when retrying API). Without this, old error messages could still show
+    
     // API call to fetch testimonials
     try {
-      const result = await request(`${apiUrl}/testimonials`);
+      const result = await request('testimonials');
 
       if (result.status === false) {
         setError(result.message || 'Failed to load testimonials');
@@ -40,56 +43,41 @@ const Show = () => {
     }
   };
 
-  const deleteTestimonial = async (id) => {
-    // function to delete testimonial by id.
+  const executeDelete = async (id) => {
+    try {
+      const result = await request(`testimonials/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (confirm('Are you sure you want to delete this testimonial?')) {
-      try {
-        const res = await fetch(`${apiUrl}/testimonials/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
-
-        // Handle HTTP errors
-        if (!res.ok) {
-          throw new Error('SERVER_ERROR');
-        }
-
-        const result = await res.json();
-
-        // Safety check
-        if (!result || typeof result.status === 'undefined') {
-          throw new Error('INVALID_RESPONSE');
-        }
-
-        if (result.status === true) {
-          //  It filters the current 'testimonials' array stored in component state).
-          // It keeps every testimonial whose 'id' does NOT match the 'id' of the testimonial that was just deleted.
-          const filteredtestimonials = testimonials.filter(
-            (testimonial) => testimonial.id !== id
-          ); // remove deleted testimonial from state.
-
-          setTestimonials(filteredtestimonials);
-          toast.success(result.message);
-        } else {
-          toast.error(result.message || 'Delete failed');
-        }
-      } catch (error) {
-        console.error('Delete testimonial error:', error);
-
-        if (error.message === 'Failed to fetch') {
-          toast.error('Network error. Please check your internet connection.');
-        } else if (error.message === 'SERVER_ERROR') {
-          toast.error('Server error. Please try again later.');
-        } else {
-          toast.error('Failed to delete testimonial');
-        }
+      if (result.status === true) {
+        const filteredTestimonials = testimonials.filter(
+          (testimonial) => testimonial.id !== id
+        );
+        setTestimonials(filteredTestimonials);
+        toast.success(result.message || 'Testimonial moved to trash.');
+      } else {
+        toast.error(result.message || 'Delete failed');
       }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete testimonial'));
     }
+  };
+
+  // Custom Toast Confirmation
+  const confirmDelete = (testimonial) => {
+    confirmToast({
+      message: (
+        <>
+          Are you sure you want to delete this{' '}
+          <strong>{testimonial.title}</strong>?
+        </>
+      ),
+
+      description:
+        'This testimonial can be restored from the Trash within 30 days.',
+
+      onConfirm: () => executeDelete(testimonial.id),
+    });
   };
 
   React.useEffect(() => {
@@ -100,22 +88,31 @@ const Show = () => {
     <>
       <Header />
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
-            <div className="col-md-3 mb-4 mb-md-0">
+            <div className="col-md-3">
               <Sidebar />
             </div>
-            <div className="col-md-9">
+            <div className="col-md-9 mt-4 mt-md-0">
               <div className="card shadow border-0">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between border-bottom pb-4">
+                  <div className="d-flex border-bottom pb-3">
                     <h5>Testimonials</h5>
-                    <Link
-                      to="/admin/testimonials/create"
-                      className="btn btn-primary"
-                    >
-                      Create
-                    </Link>
+                    <div className="d-flex ms-auto column-gap-3 row-gap-1 action-btns">
+                      <Link
+                        to="/admin/testimonials/create"
+                        className="btn btn-primary btn-md"
+                      >
+                        Create
+                      </Link>
+
+                      <Link
+                        to="/admin/testimonials/trash"
+                        className="btn btn-primary btn-md"
+                      >
+                        Trash
+                      </Link>
+                    </div>
                   </div>
 
                   {/* Loading State */}
@@ -207,9 +204,7 @@ const Show = () => {
                                   </Link>
 
                                   <button
-                                    onClick={() =>
-                                      deleteTestimonial(testimonial.id)
-                                    }
+                                    onClick={() => confirmDelete(testimonial)}
                                     type="button"
                                     className="btn btn-sm btn-danger"
                                   >

@@ -3,7 +3,6 @@ import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
 import { useForm } from 'react-hook-form';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js.
 
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,23 +10,25 @@ import { Spinner } from 'react-bootstrap';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
+import { useFormHelpers } from '../../../hooks/useFormHelpers';
 
 // CREATE TESTIMONIAL FORM.
 const Create = () => {
-  const [isDisabled, setIsDisabled] = React.useState(false); // to disable submit button during image upload, false by default means button is enabled.
-  const [imageId, setImageId] = React.useState(null); // to store uploaded image id.
-  const [imagePreview, setImagePreview] = React.useState(null); // to store uploaded image preview url.
+  // Router Hook, useNavigate to navigate programmatically after successful update.
+  const navigate = useNavigate();
 
+  // Custom Hooks, Reusable logic for image upload and form handling
+  const { isDisabled, setIsDisabled, imageId, imagePreview, handleFile } =
+    useFormHelpers();
+
+  // --- React Hook Form ---
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
-  const navigate = useNavigate();
-  
-
-  // Form submission handler.
+  // Form submit handler.
   const onSubmit = async (data) => {
     // data is a parameter and the value it receives is object of all form data.
     // console.log(data);.
@@ -37,10 +38,10 @@ const Create = () => {
     // newData is variable and the value it receives is object of all form data.
 
     setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
-    
+
     // --- API call to create testimonial ---
     try {
-      const result = await request(`${apiUrl}/testimonials`, {
+      const result = await request('testimonials', {
         method: 'POST',
         body: JSON.stringify(newData), // filled up form data is being sent as JSON string, backend will parse it and get the data in controller.
       });
@@ -58,46 +59,12 @@ const Create = () => {
     }
   };
 
-  // Image upload handler.
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImagePreview(URL.createObjectURL(file)); // Show image preview immediately after file selection.
-
-    setIsDisabled(true);
-
-    const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
-
-    formData.append('image', file);
-
-    // --- API call to upload image ---
-    try {
-      const result = await request(`${apiUrl}/temp-images`, {
-        method: 'POST',
-        body: formData, //  important: pass FormData directly
-      });
-
-      if (result.status === false) {
-        toast.error(result.errors?.image?.[0] || 'Image upload failed');
-        setImagePreview(null); // Clear preview if upload fails.
-      } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
-      }
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Image upload failed'));
-      setImagePreview(null); // Clear preview if upload fails.
-    } finally {
-      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
-    }
-  };
-
   return (
     <>
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
             <div className="col-md-3">
               <Sidebar />

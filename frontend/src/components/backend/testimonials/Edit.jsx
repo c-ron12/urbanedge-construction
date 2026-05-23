@@ -1,28 +1,30 @@
-// testimonials/Edit.jsx
 import React from 'react';
 import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
 import { useForm } from 'react-hook-form';
-import { apiUrl, token, fileUrl } from '../../common/http';
+import { fileUrl } from '../../common/http';
 import { toast } from 'react-toastify';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
+import { useFormHelpers } from '../../../hooks/useFormHelpers';
 
 const Edit = () => {
-  const params = useParams(); // get testimonial id from URL
+  // Router Hooks, useParams to get testimonial id from URL, useNavigate to navigate programmatically after successful update.
+  const params = useParams();
   const navigate = useNavigate();
 
-  // --- State ---
-  const [loading, setLoading] = React.useState(true); // true while fetching testimonial data
-  const [isDisabled, setIsDisabled] = React.useState(false); // true while submitting/updating or uploading image
-  const [testimonial, setTestimonial] = React.useState(''); // store fetched testimonial
-  const [imagePreview, setImagePreview] = React.useState(null); // store uploaded image preview
-  const [imageId, setImageId] = React.useState(null); // store uploaded image id
+  // Custom Hooks, Reusable logic for image upload and form handling
+  const { isDisabled, setIsDisabled, imageId, imagePreview, handleFile } =
+    useFormHelpers();
 
+  // Local State, used for storing fetched testimonial data and loading state while fetching data.
+  const [loading, setLoading] = React.useState(true);
+  const [testimonial, setTestimonial] = React.useState('');
+  
   // --- React Hook Form ---
   const {
     register,
@@ -38,7 +40,7 @@ const Edit = () => {
 
       // --- API call to fetch testimonial by id ---
       try {
-        const result = await request(`${apiUrl}/testimonials/${params.id}`);
+        const result = await request(`testimonials/${params.id}`);
 
         if (result.status === false) {
           toast.error('Failed to fetch testimonial');
@@ -76,7 +78,7 @@ const Edit = () => {
 
     // --- API call to edit service ---
     try {
-      const result = await request(`${apiUrl}/testimonials/${params.id}`, {
+      const result = await request(`testimonials/${params.id}`, {
         method: 'PUT',
         body: JSON.stringify(newData),
       });
@@ -95,46 +97,12 @@ const Edit = () => {
     }
   };
 
-  // --- Image upload handler ---
-  const handleFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setImagePreview(URL.createObjectURL(file)); // Show image preview immediately after file selection.
-
-    setIsDisabled(true);
-
-    const formData = new FormData(); // FormData is built-in JS object to handle file uploads, like image, PDF etc, it helps to send file data as multipart/form-data.
-
-    formData.append('image', file);
-
-    // --- API call to upload image ---
-    try {
-      const result = await request(`${apiUrl}/temp-images`, {
-        method: 'POST',
-        body: formData, //  important: pass FormData directly
-      });
-
-      if (result.status === false) {
-        toast.error(result.errors?.image?.[0] || 'Image upload failed');
-        setImagePreview(null); // Clear preview if upload fails.
-      } else {
-        setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from
-      }
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Image upload failed'));
-      setImagePreview(null); // Clear preview if upload fails.
-    } finally {
-      setIsDisabled(false); // // false here means, RE-ENABLE THE SUBMIT BUTTON after API call is finished, whether it succeeded or failed. This ensures the user can try again if there was an error.
-    }
-  };
-
   return (
     <>
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
             <div className="col-md-3">
               <Sidebar />
