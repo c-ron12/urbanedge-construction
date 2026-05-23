@@ -51,7 +51,7 @@ const Sidebar = () => {
             </li>
             <hr />
 
-            <button onClick={logout} className="btn btn-primary mt-4">
+            <button onClick={logout} className="btn btn-primary mt-4 small-btn">
               Logout
             </button>
           </ul>
