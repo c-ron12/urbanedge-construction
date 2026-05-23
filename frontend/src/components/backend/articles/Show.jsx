@@ -2,10 +2,11 @@ import React from 'react';
 import Header from '../../common/Header';
 import Footer from '../../common/Footer';
 import Sidebar from '../../common/Sidebar';
-import { apiUrl, token } from '../../common/http'; // apiUrl is defined in src/components/common/http.js
+
 import { Link } from 'react-router-dom'; // using link instead of anchor tag to avoid page reload
 import { toast } from 'react-toastify';
 import { Spinner } from 'react-bootstrap';
+import { confirmToast } from '../../common/confirmToast';
 
 import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
@@ -18,10 +19,11 @@ const Show = () => {
 
   const fetchArticles = async () => {
     setLoading(true); // start loading
+    setError(null); // clear previous errors (if any) before new fetch attempt, (important when retrying API). Without this, old error messages could still show
 
     // API call to fetch articles
     try {
-      const result = await request(`${apiUrl}/articles`);
+      const result = await request('articles');
 
       if (result.status === false) {
         setError(result.message || 'Failed to load articles');
@@ -30,7 +32,7 @@ const Show = () => {
         return;
       }
 
-      setArticles(result.data || []); // <-- use result.data (array).. data is coming from backend API response admin/ServiceController@index.
+      setArticles(result.data || []); // <-- use result.data (array).. data is coming from backend API response admin/ArticleController@index.
     } catch (error) {
       setError(getErrorMessage(error, 'Failed to load articles'));
       setArticles([]); // safe fallback in case of error to avoid infinite loading skeleton bug.
@@ -39,56 +41,40 @@ const Show = () => {
     }
   };
 
-  const deleteArticle = async (id) => {
-    // function to delete article by id
+  const executeDelete = async (id) => {
+    try {
+      const result = await request(`articles/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (confirm('Are you sure you want to delete this article?')) {
-      try {
-        const res = await fetch(`${apiUrl}/articles/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token()}`,
-          },
-        });
-
-        // Handle HTTP errors
-        if (!res.ok) {
-          throw new Error('SERVER_ERROR');
-        }
-
-        const result = await res.json();
-
-        // Safety check
-        if (!result || typeof result.status === 'undefined') {
-          throw new Error('INVALID_RESPONSE');
-        }
-
-        if (result.status === true) {
-          //  It filters the current 'articles' array stored in component state).
-          // It keeps every article whose 'id' does NOT match the 'id' of the article that was just deleted.
-          const filteredArticles = articles.filter(
-            (article) => article.id !== id
-          ); // remove deleted article from state
-
-          setArticles(filteredArticles);
-          toast.success(result.message);
-        } else {
-          toast.error(result.message || 'Delete failed');
-        }
-      } catch (error) {
-        console.error('Delete article error:', error);
-
-        if (error.message === 'Failed to fetch') {
-          toast.error('Network error. Please check your internet connection.');
-        } else if (error.message === 'SERVER_ERROR') {
-          toast.error('Server error. Please try again later.');
-        } else {
-          toast.error('Failed to delete article');
-        }
+      if (result.status === true) {
+        const filteredArticles = articles.filter(
+          (article) => article.id !== id
+        );
+        setArticles(filteredArticles);
+        toast.success(result.message || 'Article moved to Trash successfully.');
+      } else {
+        toast.error(result.message || 'Delete failed');
       }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete article'));
     }
+  };
+
+  // Custom Toast Confirmation
+  const confirmDelete = (article) => {
+    confirmToast({
+      message: (
+        <>
+          Are you sure you want to delete this <strong>{article.title}</strong>?
+        </>
+      ),
+
+      description:
+        'This article can be restored from the Trash within 30 days.',
+
+      onConfirm: () => executeDelete(article.id),
+    });
   };
 
   React.useEffect(() => {
@@ -100,23 +86,33 @@ const Show = () => {
       <Header />
 
       <main>
-        <div className="container my-sm-5 my-4 pt-5 pb-4">
+        <div className="container my-5 pt-5 pb-2 pb-sm-4">
           <div className="row mt-5">
-            <div className="col-md-3 mb-4 mb-md-0">
+            <div className="col-md-3">
               <Sidebar />
             </div>
-            <div className="col-md-9">
+            <div className="col-md-9 mt-4 mt-md-0">
               <div className="card shadow border-0">
                 <div className="card-body">
-                  <div className="d-flex justify-content-between border-bottom pb-4">
+                  <div className="d-flex border-bottom pb-3">
                     <h5>Articles</h5>
-                    <Link
-                      to="/admin/articles/create"
-                      className="btn btn-primary"
-                    >
-                      Create
-                    </Link>
+                    <div className="d-flex ms-auto column-gap-3 row-gap-1 action-btns">
+                      <Link
+                        to="/admin/articles/create"
+                        className="btn btn-primary btn-md"
+                      >
+                        Create
+                      </Link>
+
+                      <Link
+                        to="/admin/articles/trash"
+                        className="btn btn-primary btn-md"
+                      >
+                        Trash
+                      </Link>
+                    </div>
                   </div>
+
                   {/* Loading State */}
                   {loading && (
                     <div className="text-center my-5 py-5">
@@ -181,9 +177,9 @@ const Show = () => {
                                 <td style={{ maxWidth: '250px' }}>
                                   <div
                                     className="text-truncate"
-                                    title={article?.title}
+                                    title={article.title}
                                   >
-                                    {article?.title}
+                                    {article.title}
                                   </div>
                                 </td>
 
@@ -192,7 +188,7 @@ const Show = () => {
                                 </td>
 
                                 <td>
-                                  <div class="d-flex flex-wrap custom-gap">
+                                  <div className="d-flex flex-wrap custom-gap">
                                     <Link
                                       to={`/admin/articles/edit/${article.id}`}
                                       className="btn btn-sm btn-info"
@@ -200,7 +196,7 @@ const Show = () => {
                                       Edit
                                     </Link>
                                     <button
-                                      onClick={() => deleteArticle(article.id)}
+                                      onClick={() => confirmDelete(article)}
                                       type="button"
                                       className="btn btn-sm btn-danger"
                                     >
