@@ -1,10 +1,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './assets/css/style.scss';
-import { ToastContainer, toast } from 'react-toastify'; // for toast notifications.
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Frontend components
+// Frontend imports...
 import Home from './components/frontend/Home';
 import About from './components/frontend/About';
 import Services from './components/frontend/Services';
@@ -17,31 +17,26 @@ import BlogDetail from './components/frontend/BlogDetail';
 import ScrollToTopOnRouteChange from './components/common/ScrollToTopOnRouteChange';
 import ScrollToTopButton from './components/common/ScrollToTopButton';
 
-// Admin components
+// Admin imports...
 import Login from './components/backend/login';
 import Dashboard from './components/backend/Dashboard';
-
-// Admin components for services, projects, articles, testimonials, and members.
-import RequireAuth from './components/common/RequireAuth'; // to protect admin routes.
-import { default as ShowServices } from './components/backend/services/Show'; // renamed import to avoid conflict with Services component.
-import { default as CreateService } from './components/backend/services/Create'; // renamed import to avoid conflict with Services component.
-import { default as EditService } from './components/backend/services/Edit'; // renamed import to avoid conflict with Services component.
-
+import RequireAuth from './components/common/RequireAuth';
+import { default as ShowServices } from './components/backend/services/Show';
+import { default as CreateService } from './components/backend/services/Create';
+import { default as EditService } from './components/backend/services/Edit';
 import { default as ShowProjects } from './components/backend/projects/Show';
 import { default as CreateProject } from './components/backend/projects/Create';
 import { default as EditProject } from './components/backend/projects/Edit';
-
 import { default as ShowArticles } from './components/backend/articles/Show';
 import { default as CreateArticle } from './components/backend/articles/Create';
 import { default as EditArticle } from './components/backend/articles/Edit';
-
 import { default as ShowTestimonials } from './components/backend/testimonials/Show';
 import { default as CreateTestimonial } from './components/backend/testimonials/Create';
 import { default as EditTestimonial } from './components/backend/testimonials/Edit';
-
 import { default as ShowMembers } from './components/backend/members/Show';
 import { default as CreateMembers } from './components/backend/members/Create';
 import { default as EditMember } from './components/backend/members/Edit';
+import DeletedData from './components/common/DeletedData';
 
 function App() {
   return (
@@ -50,6 +45,7 @@ function App() {
         <ScrollToTopOnRouteChange />
         <ScrollToTopButton />
         <Routes>
+          {/* --- Public Frontend Routes --- */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
@@ -59,153 +55,172 @@ function App() {
           <Route path="/service/:id" element={<ServiceDetail />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
-          <Route path="/admin/login" element={<Login />} />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <RequireAuth>
-                <Dashboard />{' '}
-                {/* This is children component and it is being received from RequireAuth.jsx children props*/}
-              </RequireAuth>
-            }
-          />
 
-          <Route
-            path="/admin/services"
-            element={
-              <RequireAuth>
-                <ShowServices />
-              </RequireAuth>
-            }
-          />
+          {/* --- Admin Routes --- */}
+          <Route path="/admin">
+            <Route path="login" element={<Login />} />
 
-          <Route
-            path="/admin/services/create"
-            element={
-              <RequireAuth>
-                <CreateService />
-              </RequireAuth>
-            }
-          />
+            {/* Protected Admin Routes */}
+            <Route
+              path=""
+              element={
+                <RequireAuth>
+                  <Dashboard />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="dashboard"
+              element={
+                <RequireAuth>
+                  <Dashboard />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="/admin/services/edit/:id"
-            element={
-              <RequireAuth>
-                <EditService />
-              </RequireAuth>
-            }
-          />
+            {/* Generic Trashed/Deleted Route */}
+            <Route
+              path=":resource/trash"
+              element={
+                <RequireAuth>
+                  <DeletedData />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="/admin/projects"
-            element={
-              <RequireAuth>
-                <ShowProjects />
-              </RequireAuth>
-            }
-          />
+            {/* Services */}
+            <Route
+              path="services"
+              element={
+                <RequireAuth>
+                  <ShowServices />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="services/create"
+              element={
+                <RequireAuth>
+                  <CreateService />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="services/edit/:id"
+              element={
+                <RequireAuth>
+                  <EditService />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="/admin/projects/create"
-            element={
-              <RequireAuth>
-                <CreateProject />
-              </RequireAuth>
-            }
-          />
+            {/* Projects */}
+            <Route
+              path="projects"
+              element={
+                <RequireAuth>
+                  <ShowProjects />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="projects/create"
+              element={
+                <RequireAuth>
+                  <CreateProject />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="projects/edit/:id"
+              element={
+                <RequireAuth>
+                  <EditProject />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="/admin/projects/edit/:id"
-            element={
-              <RequireAuth>
-                <EditProject />
-              </RequireAuth>
-            }
-          />
+            {/* Articles */}
+            <Route
+              path="articles"
+              element={
+                <RequireAuth>
+                  <ShowArticles />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="articles/create"
+              element={
+                <RequireAuth>
+                  <CreateArticle />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="articles/edit/:id"
+              element={
+                <RequireAuth>
+                  <EditArticle />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="/admin/articles"
-            element={
-              <RequireAuth>
-                <ShowArticles />
-              </RequireAuth>
-            }
-          />
+            {/* Testimonials */}
+            <Route
+              path="testimonials"
+              element={
+                <RequireAuth>
+                  <ShowTestimonials />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="testimonials/create"
+              element={
+                <RequireAuth>
+                  <CreateTestimonial />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="testimonials/edit/:id"
+              element={
+                <RequireAuth>
+                  <EditTestimonial />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="/admin/articles/create"
-            element={
-              <RequireAuth>
-                <CreateArticle />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/articles/edit/:id"
-            element={
-              <RequireAuth>
-                <EditArticle />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/testimonials"
-            element={
-              <RequireAuth>
-                <ShowTestimonials />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/testimonials/create"
-            element={
-              <RequireAuth>
-                <CreateTestimonial />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/testimonials/edit/:id"
-            element={
-              <RequireAuth>
-                <EditTestimonial />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/members"
-            element={
-              <RequireAuth>
-                <ShowMembers />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/members/create"
-            element={
-              <RequireAuth>
-                <CreateMembers />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/admin/members/edit/:id"
-            element={
-              <RequireAuth>
-                <EditMember />
-              </RequireAuth>
-            }
-          />
+            {/* Members */}
+            <Route
+              path="members"
+              element={
+                <RequireAuth>
+                  <ShowMembers />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="members/create"
+              element={
+                <RequireAuth>
+                  <CreateMembers />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="members/edit/:id"
+              element={
+                <RequireAuth>
+                  <EditMember />
+                </RequireAuth>
+              }
+            />
+          </Route>
         </Routes>
       </BrowserRouter>
+
       <ToastContainer position="top-right" autoClose={2000} />
     </>
   );
