@@ -11,6 +11,7 @@ UrbanEdge Construction is a full-stack web application built with React (fronten
 * 📝 Blogs & Articles
 * 💬 Testimonials
 * 🔐 Admin Panel (CRUD operations for content management)
+* 🗑️ Soft Delete & Recovery (Trash bin functionality to view, restore, or permanently delete removed items)
 * 📱 Fully Responsive Design
 
 ---
@@ -90,10 +91,20 @@ npm run dev
 * Manage services, projects, blogs, and testimonials
 
 ---
+## 🔮 Future Enhancements (Admin Console)
 
+To further elevate the platform's scalability and admin user experience, the following features are planned for future releases:
+
+* 📊 **Analytics Dashboard:** Integrate charts and graphs (e.g., using Chart.js or Recharts) on the main welcome screen to display statistics like total projects, active services, and recent blog views.
+* 🔐 **Role-Based Access Control (RBAC):** Implement multiple admin tiers (e.g., Super Admin with full access vs. Editor with content-only access) using Laravel Sanctum/Breeze.
+* 🌓 **Dark Mode Toggle:** Add a theme switcher to the admin panel for improved accessibility and nighttime usability.
+* 🔄 **Bulk Actions:** Enable multi-select checkboxes in tables to mass-delete, activate, or restore multiple items at once.
+* 🖼️ **Advanced Media Manager:** Build a dedicated media library section to reuse uploaded construction site images across different modules (Services, Projects, Blogs) instead of re-uploading files.
+* ✉️ **Live Contact Form Influx:** Add an admin inbox tab to view and reply to queries sent directly through the frontend "Contact Us" page.
+
+* 
 ## 📂 Project Structure
 
-```
 urbanedge-construction/
  ├── frontend/   # React app
  └── backend/    # Laravel API
