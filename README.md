@@ -102,9 +102,10 @@ To further elevate the platform's scalability and admin user experience, the fol
 * 🖼️ **Advanced Media Manager:** Build a dedicated media library section to reuse uploaded construction site images across different modules (Services, Projects, Blogs) instead of re-uploading files.
 * ✉️ **Live Contact Form Influx:** Add an admin inbox tab to view and reply to queries sent directly through the frontend "Contact Us" page.
 
-* 
+  
 ## 📂 Project Structure
 
+```
 urbanedge-construction/
  ├── frontend/   # React app
  └── backend/    # Laravel API
