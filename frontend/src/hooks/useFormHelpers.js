@@ -6,9 +6,9 @@ import { toast } from 'react-toastify';
 
 export const useFormHelpers = (initialContent = '') => {
   // Form submission & Image states
-  const [isDisabled, setIsDisabled] = React.useState(false);
-  const [imageId, setImageId] = React.useState(null);
-  const [imagePreview, setImagePreview] = React.useState(null);
+  const [isDisabled, setIsDisabled] = React.useState(false);   // Disable the submit button during image upload, false means enabled by default, true means disabled. 
+  const [imageId, setImageId] = React.useState(null);   // Store the uploaded image ID to associate it with the form submission later. Initially null, meaning no image has been uploaded yet.
+  const [imagePreview, setImagePreview] = React.useState(null);  // Store the preview URL of the selected image to show it in the form before submission. Initially null, meaning no image has been selected yet.
 
   // WYSIWYG Editor states
   const editor = React.useRef(null); // Editor instance reference

@@ -14,7 +14,7 @@ import { getErrorMessage } from '../../common/apiErrorHandler';
 import { useFormHelpers } from '../../../hooks/useFormHelpers';
 
 // CREATE SERVICE FORM.
-const Create = ({ placeholder = 'content' }) => {
+const Create = () => {
   // Router Hook, useNavigate to navigate programmatically after successful update.
   const navigate = useNavigate();
 
@@ -33,9 +33,8 @@ const Create = ({ placeholder = 'content' }) => {
   const config = React.useMemo(
     () => ({
       readonly: false,
-      placeholder: placeholder || 'Content',
     }),
-    [placeholder]
+    []
   );
 
   // --- React Hook Form ---

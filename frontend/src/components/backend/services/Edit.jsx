@@ -13,7 +13,7 @@ import { request } from '../../common/httpClient';
 import { getErrorMessage } from '../../common/apiErrorHandler';
 import { useFormHelpers } from '../../../hooks/useFormHelpers';
 
-const Edit = ({ placeholder = 'content' }) => {
+const Edit = () => {
   // Router Hooks, useParams to get service id from URL, useNavigate to navigate programmatically after successful update.
   const params = useParams();
   const navigate = useNavigate();
@@ -37,8 +37,6 @@ const Edit = ({ placeholder = 'content' }) => {
   const config = React.useMemo(
     () => ({
       readonly: false,
-      placeholder: placeholder || '', // ensure Jodit receives a string.
-      autofocus: false,
     }),
     [placeholder]
   );

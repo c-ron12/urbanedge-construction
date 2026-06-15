@@ -1,4 +1,3 @@
-// components/common/httpClient.js
 import { token, adminApiUrl } from './http'; 
 
 export const request = async (url, options = {}) => {
