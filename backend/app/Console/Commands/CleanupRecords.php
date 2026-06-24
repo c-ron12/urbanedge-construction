@@ -35,7 +35,7 @@ class CleanupRecords extends Command
         $oldImages = TempImage::where('created_at', '<', Carbon::now()->subHours(24))->get();
 
         foreach ($oldImages as $image) {
-            /** @var \App\Models\TempImage $image */ 
+            /** @var TempImage $image */
             $sourcePath = public_path('uploads/temp/' . $image->name);
             $thumbPath = public_path('uploads/temp/thumbnails/' . $image->name);
 
