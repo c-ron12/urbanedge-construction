@@ -3,12 +3,11 @@ import { request } from '../components/common/httpClient';
 import { getErrorMessage } from '../components/common/apiErrorHandler';
 import { toast } from 'react-toastify';
 
-
 export const useFormHelpers = (initialContent = '') => {
   // Form submission & Image states
-  const [isDisabled, setIsDisabled] = React.useState(false);   // Disable the submit button during image upload, false means enabled by default, true means disabled. 
-  const [imageId, setImageId] = React.useState(null);   // Store the uploaded image ID to associate it with the form submission later. Initially null, meaning no image has been uploaded yet.
-  const [imagePreview, setImagePreview] = React.useState(null);  // Store the preview URL of the selected image to show it in the form before submission. Initially null, meaning no image has been selected yet.
+  const [isDisabled, setIsDisabled] = React.useState(false); // Disable the submit button during image upload, false means enabled by default, true means disabled.
+  const [imageId, setImageId] = React.useState(null); // Store the uploaded image ID to associate it with the form submission later. Initially null, meaning no image has been uploaded yet.
+  const [imagePreview, setImagePreview] = React.useState(null); // Store the preview URL of the selected image to show it in the form before submission. Initially null, meaning no image has been selected yet.
 
   // WYSIWYG Editor states
   const editor = React.useRef(null); // Editor instance reference
@@ -28,12 +27,12 @@ export const useFormHelpers = (initialContent = '') => {
     try {
       const result = await request('temp-images', {
         method: 'POST',
-        body: formData,  // When using FormData, we should not set Content-Type header to multipart/form-data manually, because browser will automatically set it with the correct boundary. If we set it manually, the request will fail.
+        body: formData, // When using FormData, we should not set Content-Type header to multipart/form-data manually, because browser will automatically set it with the correct boundary. If we set it manually, the request will fail.
       });
 
       if (result.status === false) {
         toast.error(result.errors?.image?.[0] || 'Image upload failed');
-        setImagePreview(null);  // Clear image preview if upload fails
+        setImagePreview(null); // Clear image preview if upload fails
       } else {
         setImageId(result.data.id); // Store uploaded image id to use it during form submission, data and id are coming from backend API response from controller after successful image upload.
       }
@@ -45,6 +44,23 @@ export const useFormHelpers = (initialContent = '') => {
     }
   };
 
+  const handleClearImage = (inputId = 'image', onClearCallback = null) => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImagePreview(null);
+    setImageId(null);
+
+    const fileInput = document.getElementById(inputId);
+    if (fileInput) fileInput.value = '';
+
+    // If a component passes a custom cleanup callback, run it now!
+    if (typeof onClearCallback === 'function') {
+      onClearCallback();
+    }
+  };
+
   return {
     isDisabled,
     setIsDisabled,
@@ -53,6 +69,7 @@ export const useFormHelpers = (initialContent = '') => {
     imagePreview,
     setImagePreview,
     handleFile,
+    handleClearImage,
     // Editor exports
     editor,
     content,
