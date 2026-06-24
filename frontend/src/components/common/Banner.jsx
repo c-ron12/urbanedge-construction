@@ -17,7 +17,7 @@ const Banner = ({ heading, title, text, bgImage }) => {
       <div className="banner d-flex align-items-center" style={bannerStyle}>
         <div className="container-fluid">
           <div className="text-center">
-            <h2 dangerouslySetInnerHTML={{ __html: heading }}></h2>
+            <h2 dangerouslySetInnerHTML={{ __html: heading }} className="pt-5 pt-sm-0" ></h2>
             <br />
             {title && <h3 dangerouslySetInnerHTML={{ __html: title }}></h3>}
             <p className="title-desc-text" dangerouslySetInnerHTML={{ __html: text }} ></p>
