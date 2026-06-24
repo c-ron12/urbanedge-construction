@@ -19,12 +19,18 @@ const Edit = () => {
   const navigate = useNavigate();
 
   // Custom Hooks, Reusable logic for image upload and form handling
-  const { isDisabled, setIsDisabled, imageId, imagePreview, handleFile } =
-    useFormHelpers();
+  const {
+    isDisabled,
+    setIsDisabled,
+    imageId,
+    imagePreview,
+    handleFile,
+    handleClearImage,
+  } = useFormHelpers();
 
   // Local states
   const [loading, setLoading] = React.useState(true);
-  const [member, setMember] = React.useState({});
+  const [member, setMember] = React.useState(null);
 
   // --- React Hook Form ---
   const {
@@ -74,7 +80,10 @@ const Edit = () => {
 
     setIsDisabled(true); // disable submit button immediately
 
-    const newData = { ...data, imageId: imageId };
+    const newData = {
+      ...data,
+      imageId: imageId ? imageId : member?.image ? null : 'clear',
+    };
     // newData is variable and the value it receives is object of all form data + imageId which is id of newly uploaded image, this newData will be sent to backend API for updating member, in memberController.php, update() method.
 
     // --- API call to edit member ---
@@ -179,7 +188,6 @@ const Edit = () => {
                         />
                       </div>
 
-                      {/* Image upload field */}
                       <div className="mb-3">
                         <label htmlFor="image" className="form-label">
                           Image
@@ -191,29 +199,46 @@ const Edit = () => {
                           className="form-control"
                         />
 
+                        {/* --- CASE A: NEW IMAGE PREVIEW WRAPPER --- */}
                         {imagePreview ? (
-                          <div className="mt-3">
+                          <div className="image-preview-wrapper">
                             <img
                               src={imagePreview}
                               alt="New Preview"
-                              style={{
-                                width: '100px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleClearImage('image')}
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove new image"
+                            >
+                              ✕
+                            </button>
                           </div>
-                        ) : member.image ? (
-                          <div className="mt-3">
+                        ) : member?.image ? (
+                          /* --- CASE B: EXISTING DATABASE IMAGE WRAPPER --- */
+                          <div className="image-preview-wrapper">
                             <img
-                              src={`${fileUrl}/uploads/members/small/${member.image}`}
-                              alt="Old"
-                              style={{
-                                width: '100px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              src={`${fileUrl}/uploads/members/small/${member?.image}`}
+                              alt="Old Preview"
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleClearImage('image', () =>
+                                  setMember((prev) => ({
+                                    ...prev,
+                                    image: null,
+                                  }))
+                                )
+                              }
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove current image"
+                            >
+                              ✕
+                            </button>
                           </div>
                         ) : null}
                       </div>

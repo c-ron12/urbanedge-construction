@@ -25,6 +25,7 @@ const Create = () => {
     imageId,
     imagePreview,
     handleFile,
+    handleClearImage,
     editor,
     content,
     setContent,
@@ -241,29 +242,32 @@ const Create = () => {
                       <label htmlFor="image" className="form-label">
                         Image
                       </label>
-                      <br />
                       <input
                         id="image"
                         type="file"
                         onChange={handleFile}
                         className="form-control"
                       />
-                    </div>
 
-                    {/* --- IMAGE PREVIEW SECTION --- */}
-                    {imagePreview && (
-                      <div className="mt-3">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          style={{
-                            width: '200px',
-                            height: 'auto',
-                            borderRadius: '8px',
-                          }}
-                        />
-                      </div>
-                    )}
+                      {/* --- IMAGE PREVIEW SECTION WITH REMOVE BUTTON --- */}
+                      {imagePreview && (
+                        <div className="image-preview-wrapper">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="img-fluid preview-img"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleClearImage('image')}
+                            className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="mb-3">
                       <label htmlFor="status" className="form-label">

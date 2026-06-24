@@ -18,8 +18,14 @@ const Create = () => {
   const navigate = useNavigate();
 
   // Custom Hooks, Reusable logic for image upload and form handling
-  const { isDisabled, setIsDisabled, imageId, imagePreview, handleFile } =
-    useFormHelpers();
+  const {
+    isDisabled,
+    setIsDisabled,
+    imageId,
+    imagePreview,
+    handleFile,
+    handleClearImage,
+  } = useFormHelpers();
 
   // --- React Hook Form ---
   const {
@@ -152,18 +158,22 @@ const Create = () => {
                         className="form-control"
                       />
 
-                      {/* --- IMAGE PREVIEW SECTION --- */}
+                      {/* --- IMAGE PREVIEW SECTION WITH REMOVE BUTTON --- */}
                       {imagePreview && (
-                        <div className="mt-3">
+                        <div className="image-preview-wrapper">
                           <img
                             src={imagePreview}
                             alt="Preview"
-                            style={{
-                              width: '150px',
-                              height: 'auto',
-                              borderRadius: '8px',
-                            }}
+                            className="img-fluid preview-img"
                           />
+                          <button
+                            type="button"
+                            onClick={() => handleClearImage('image')}
+                            className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
                         </div>
                       )}
                     </div>

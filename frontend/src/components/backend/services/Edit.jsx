@@ -25,6 +25,7 @@ const Edit = () => {
     imageId,
     imagePreview,
     handleFile,
+    handleClearImage,
     editor,
     content,
     setContent,
@@ -32,13 +33,13 @@ const Edit = () => {
 
   // Local states
   const [loading, setLoading] = React.useState(true);
-  const [service, setService] = React.useState({});
+  const [service, setService] = React.useState(null);
 
   const config = React.useMemo(
     () => ({
       readonly: false,
     }),
-    [placeholder]
+    []
   );
 
   // --- React Hook Form ---
@@ -90,7 +91,11 @@ const Edit = () => {
 
     setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
 
-    const newData = { ...data, content: content, imageId: imageId };
+    const newData = {
+      ...data,
+      content: content,
+      imageId: imageId ? imageId : service.image ? null : 'clear',
+    };
     // newData is variable and the value it receives is object of all form data + imageId which is id of newly uploaded image, this newData will be sent to backend API for updating testimonial, in testimonialController.php, update() method.
 
     // --- API call to edit service ---
@@ -204,7 +209,7 @@ const Edit = () => {
                         </label>
                         <JoditEditor
                           id="description"
-                          key={service.id}
+                          key={service?.id}
                           ref={editor}
                           value={content}
                           config={config}
@@ -224,29 +229,46 @@ const Edit = () => {
                           className="form-control"
                         />
 
+                        {/* --- CASE A: NEW IMAGE PREVIEW WRAPPER --- */}
                         {imagePreview ? (
-                          <div className="mt-3">
+                          <div className="image-preview-wrapper">
                             <img
                               src={imagePreview}
                               alt="New Preview"
-                              style={{
-                                width: '200px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleClearImage('image')}
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove new image"
+                            >
+                              ✕
+                            </button>
                           </div>
-                        ) : service.image ? (
-                          <div className="mt-3">
+                        ) : service?.image ? (
+                          /* --- CASE B: EXISTING DATABASE IMAGE WRAPPER --- */
+                          <div className="image-preview-wrapper">
                             <img
-                              src={`${fileUrl}/uploads/services/small/${service.image}`}
-                              alt="Old"
-                              style={{
-                                width: '200px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              src={`${fileUrl}/uploads/services/small/${service?.image}`}
+                              alt="Old Preview"
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleClearImage('image', () =>
+                                  setService((prev) => ({
+                                    ...prev,
+                                    image: null,
+                                  }))
+                                )
+                              }
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove current image"
+                            >
+                              ✕
+                            </button>
                           </div>
                         ) : null}
                       </div>

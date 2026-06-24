@@ -25,10 +25,11 @@ const Create = () => {
     imageId,
     imagePreview,
     handleFile,
+    handleClearImage,
     editor,
     content,
     setContent,
-  } = useFormHelpers('');
+  } = useFormHelpers(''); // pass empty string as initial content for the editor, because we are creating new article, if it was edit form, we would pass existing article content here to show in editor.
 
   const config = React.useMemo(
     () => ({
@@ -175,18 +176,22 @@ const Create = () => {
                         className="form-control"
                       />
 
-                      {/* --- IMAGE PREVIEW SECTION --- */}
+                      {/* --- IMAGE PREVIEW SECTION WITH REMOVE BUTTON --- */}
                       {imagePreview && (
-                        <div className="mt-3">
+                        <div className="image-preview-wrapper">
                           <img
                             src={imagePreview}
                             alt="Preview"
-                            style={{
-                              width: '200px',
-                              height: 'auto',
-                              borderRadius: '8px',
-                            }}
+                            className="img-fluid preview-img"
                           />
+                          <button
+                            type="button"
+                            onClick={() => handleClearImage('image')}
+                            className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
                         </div>
                       )}
                     </div>

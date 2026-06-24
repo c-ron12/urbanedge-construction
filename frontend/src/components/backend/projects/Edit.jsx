@@ -27,6 +27,7 @@ const Edit = () => {
     imageId,
     imagePreview,
     handleFile,
+    handleClearImage,
     editor,
     content,
     setContent,
@@ -36,12 +37,12 @@ const Edit = () => {
     () => ({
       readonly: false,
     }),
-    [placeholder]
+    []
   );
 
   // Local states
   const [loading, setLoading] = React.useState(true);
-  const [project, setProject] = React.useState({});
+  const [project, setProject] = React.useState(null);
 
   // --- React Hook Form ---
   const {
@@ -95,7 +96,11 @@ const Edit = () => {
     // data is a parameter and the value it receives is object of all form data.
 
     setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
-    const newData = { ...data, content: content, imageId: imageId };
+    const newData = {
+      ...data,
+      content: content,
+      imageId: imageId ? imageId : project.image ? null : 'clear',
+    };
     // ...data means all data from form, content is wising editor data, imageId is uploaded image id that we are getting from handleFile function in below.
     // newData is variable and the value it receives is object of all form data + content from wysiwyg editor.
 
@@ -281,7 +286,7 @@ const Edit = () => {
                         </label>
                         <JoditEditor
                           id="description"
-                          key={project.id} // Important for re-rendering with fetched data.
+                          key={project?.id} // Important for re-rendering with fetched data.
                           ref={editor}
                           value={content}
                           config={config}
@@ -295,35 +300,52 @@ const Edit = () => {
                           Image
                         </label>
                         <input
-                          type="file"
                           id="image"
+                          type="file"
                           onChange={handleFile}
                           className="form-control"
                         />
 
+                        {/* --- CASE A: NEW IMAGE PREVIEW WRAPPER --- */}
                         {imagePreview ? (
-                          <div className="mt-3">
+                          <div className="image-preview-wrapper">
                             <img
                               src={imagePreview}
                               alt="New Preview"
-                              style={{
-                                width: '200px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleClearImage('image')}
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove new image"
+                            >
+                              ✕
+                            </button>
                           </div>
-                        ) : project.image ? (
-                          <div className="mt-3">
+                        ) : project?.image ? (
+                          /* --- CASE B: EXISTING DATABASE IMAGE WRAPPER --- */
+                          <div className="image-preview-wrapper">
                             <img
-                              src={`${fileUrl}/uploads/projects/small/${project.image}`}
-                              alt="Old"
-                              style={{
-                                width: '200px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              src={`${fileUrl}/uploads/projects/small/${project?.image}`}
+                              alt="Old Preview"
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleClearImage('image', () =>
+                                  setProject((prev) => ({
+                                    ...prev,
+                                    image: null,
+                                  }))
+                                )
+                              }
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove current image"
+                            >
+                              ✕
+                            </button>
                           </div>
                         ) : null}
                       </div>

@@ -26,21 +26,19 @@ const Edit = () => {
     imageId,
     imagePreview,
     handleFile,
+    handleClearImage,
     editor,
     content,
     setContent,
-  } = useFormHelpers('');
+  } = useFormHelpers('');  
 
   // Local states
   const [loading, setLoading] = React.useState(true);
-  const [articles, setArticles] = React.useState({});
+  const [article, setArticle] = React.useState(null);
 
-  const config = React.useMemo(
-    () => ({
-      readonly: false,
-    }),
-    [placeholder]
-  );
+  const config = React.useMemo(() => ({
+    readonly: false,
+  }));
 
   // --- React Hook Form ---
   const {
@@ -65,7 +63,7 @@ const Edit = () => {
           return;
         }
 
-        setArticles(result.data); // Store fetched article data in state, data is coming from backend api admin/articleController@show.
+        setArticle(result.data); // Store fetched article data in state, data is coming from backend api admin/articleController@show.
 
         // set default filled values after fetching data
         reset({
@@ -89,8 +87,12 @@ const Edit = () => {
     // data is a parameter and the value it receives is object of all form data.
     setIsDisabled(true); // ADD THIS to disable submit button immediately when form is submitted, to prevent multiple submissions.
 
-    const newData = { ...data, content: content, imageId: imageId };
-    // newData is variable and the value it receives is object of all form data + content from wysiwyg editor.
+    // If an imageId is present, we send it. If existing image was cleared entirely, we track that too.
+    const newData = {
+      ...data,
+      content: content,
+      imageId: imageId ? imageId : article?.image ? null : 'clear',
+    };
 
     // --- API call to edit article ---
     try {
@@ -201,7 +203,7 @@ const Edit = () => {
                         </label>
                         <JoditEditor
                           id="description"
-                          key={articles.id}
+                          key={article?.id}
                           ref={editor}
                           value={content}
                           config={config}
@@ -221,29 +223,46 @@ const Edit = () => {
                           className="form-control"
                         />
 
+                        {/* --- CASE A: NEW IMAGE PREVIEW WRAPPER --- */}
                         {imagePreview ? (
-                          <div className="mt-3">
+                          <div className="image-preview-wrapper">
                             <img
                               src={imagePreview}
                               alt="New Preview"
-                              style={{
-                                width: '200px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleClearImage('image')}
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove new image"
+                            >
+                              ✕
+                            </button>
                           </div>
-                        ) : articles.image ? (
-                          <div className="mt-3">
+                        ) : article?.image ? (
+                          /* --- CASE B: EXISTING DATABASE IMAGE WRAPPER --- */
+                          <div className="image-preview-wrapper">
                             <img
-                              src={`${fileUrl}/uploads/articles/small/${articles.image}`}
-                              alt="Old"
-                              style={{
-                                width: '200px',
-                                borderRadius: '8px',
-                                height: 'auto',
-                              }}
+                              src={`${fileUrl}/uploads/articles/small/${article?.image}`}
+                              alt="Old Preview"
+                              className="img-fluid preview-img"
                             />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleClearImage('image', () =>
+                                  setArticle((prev) => ({
+                                    ...prev,
+                                    image: null,
+                                  }))
+                                )
+                              }
+                              className="btn btn-danger btn-sm position-absolute btn-remove-image"
+                              title="Remove current image"
+                            >
+                              ✕
+                            </button>
                           </div>
                         ) : null}
                       </div>
