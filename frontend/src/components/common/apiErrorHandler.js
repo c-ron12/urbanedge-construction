@@ -5,7 +5,7 @@ export const getErrorMessage = (error, fallback = 'Something went wrong.') => {
       const firstKey = Object.keys(error.details)[0];
       return error.details[firstKey][0];
     } catch (e) {
-      return fallback; // Safety net if the object structure is weird
+      return fallback; // In case the structure of error.details is not as expected, return fallback~
     }
   }
 
